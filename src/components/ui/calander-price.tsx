@@ -1,15 +1,52 @@
-import { buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import * as React from 'react'
-import { DayPicker } from 'react-day-picker'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button, DayPicker, DayProps } from 'react-day-picker'
+import { cn } from '@/lib/utils'
+import { buttonVariants } from '@/components/ui/button'
+import { PCDay } from '@/features/flights/service/flights.service'
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  prices: PCDay[]
+}
+
+const CustomDay = ({
+  date,
+  prices,
+  ...props
+}: DayProps & {
+  prices: PCDay[]
+}) => {
+  const priceData = prices.find(
+    (p) => new Date(p.day).toDateString() === date.toDateString()
+  )
+
+  return (
+    <Button
+      className='w-14 h-14 flex flex-col items-center justify-center'
+      {...props}
+    >
+      <div className='text-sm'>{date.getDate()}</div>
+      {priceData && (
+        <div
+          className={cn(
+            'text-xs mt-1',
+            priceData.group === 'low' && 'text-green-600',
+            priceData.group === 'medium' && 'text-yellow-600',
+            priceData.group === 'high' && 'text-red-600'
+          )}
+        >
+          ${priceData.price}
+        </div>
+      )}
+    </Button>
+  )
+}
 
 function CalendarPrice({
   className,
   classNames,
   showOutsideDays = true,
+  prices,
   ...props
 }: CalendarProps) {
   return (
@@ -31,7 +68,7 @@ function CalendarPrice({
         table: 'w-full border-collapse space-y-1',
         head_row: 'flex',
         head_cell:
-          'text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]',
+          'text-muted-foreground rounded-md w-14 font-normal text-[0.8rem]',
         row: 'flex w-full mt-2',
         cell: cn(
           'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected].day-range-end)]:rounded-r-md',
@@ -41,7 +78,7 @@ function CalendarPrice({
         ),
         day: cn(
           buttonVariants({ variant: 'ghost' }),
-          'h-8 w-8 p-0 font-normal aria-selected:opacity-100'
+          'h-14 w-14 p-0 font-normal aria-selected:opacity-100'
         ),
         day_range_start: 'day-range-start',
         day_range_end: 'day-range-end',
@@ -59,12 +96,16 @@ function CalendarPrice({
       components={{
         IconLeft: () => <ChevronLeft className='h-4 w-4' />,
         IconRight: () => <ChevronRight className='h-4 w-4' />,
+
+        DayContent(props) {
+          return <CustomDay prices={prices} {...props} />
+        },
       }}
       {...props}
     />
   )
 }
+
 CalendarPrice.displayName = 'CalendarPrice'
 
 export { CalendarPrice }
-

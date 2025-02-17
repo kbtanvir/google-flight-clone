@@ -1,23 +1,33 @@
 import { useState } from 'react'
 import { z } from 'zod'
 import { format } from 'date-fns'
-import { useForm, useFormContext } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useSearch } from '@tanstack/react-router'
 import debounce from 'lodash.debounce'
-import { Calendar as CalendarIcon, Check } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { CalendarPrice } from '@/components/ui/calander-price'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Main } from '@/components/layout/main'
-import { FlightService } from './service/flights.service'
+import OriginField from './components/flights-origin-field'
+import FlightsPriceField from './components/flights-price-field'
+import { flightService } from './service/flights.service'
 
 const formSchema = z
   .object({
@@ -55,125 +65,10 @@ const formSchema = z
     }
   )
 
-type FormSchema = z.infer<typeof formSchema>
-type Option = { label: string; skyId: string; entityId: string }
+export type FormSchema = z.infer<typeof formSchema>
+export type Option = { label: string; skyId: string; entityId: string }
 
-const flightService = new FlightService()
-const debouncedSearch = debounce((func, value) => func(value), 700)
-
-function OriginField() {
-  const [showOption, setshowOption] = useState(false)
-  const form = useFormContext<FormSchema>()
-  const [searchResults, setSearchResults] = useState<Option[]>([
-    {
-      label: 'Malaga',
-      skyId: 'AGP',
-      entityId: '95565095',
-    },
-    {
-      label: 'Malaysia',
-      skyId: 'MY',
-      entityId: '29475325',
-    },
-    {
-      label: 'Malatya',
-      skyId: 'MLX',
-      entityId: '128667482',
-    },
-    {
-      label: 'Malacca',
-      skyId: 'MKZ',
-      entityId: '95673457',
-    },
-    {
-      label: 'Malang',
-      skyId: 'MLG',
-      entityId: '95673406',
-    },
-    {
-      label: 'Mala Mala',
-      skyId: 'AAM',
-      entityId: '129055248',
-    },
-    {
-      label: 'Malabo',
-      skyId: 'SSG',
-      entityId: '99539630',
-    },
-    {
-      label: 'Malawi',
-      skyId: 'MW',
-      entityId: '29475265',
-    },
-  ])
-
-  const searchOriginMutation = useMutation({
-    mutationKey: ['flights.search'],
-    mutationFn: flightService.searchAirports,
-    onSuccess(data) {
-      const options = data.map((item) => ({
-        label: item.presentation.title,
-        skyId: item.skyId,
-        entityId: item.entityId,
-      }))
-      setSearchResults(options)
-    },
-  })
-
-  const handleSearchChange = (value: string) => {
-    form.setValue('origin', { ...form.getValues('origin'), label: value })
-
-    if (value.trim()) {
-      debouncedSearch(() => {
-        setshowOption(true)
-        return searchOriginMutation.mutate(value)
-      }, value)
-    } else {
-      setshowOption(false)
-    }
-  }
-
-  const handleSelect = (option: Option) => {
-    form.setValue('origin', option)
-    setshowOption(false)
-  }
-
-  return (
-    <FormField
-      control={form.control}
-      name='origin'
-      render={({ field }) => (
-        <FormItem className=' '>
-          <FormLabel>Origin</FormLabel>
-          <Popover open={showOption}>
-            <FormControl>
-              <PopoverTrigger>
-                <Input onFocus={() => setshowOption(false)} onChange={(e) => handleSearchChange(e.target.value)} value={form.watch('origin')?.label} placeholder='origin' />
-              </PopoverTrigger>
-            </FormControl>
-            {
-              <PopoverContent onInteractOutside={() => setshowOption(false)} className='z-1 p-0   h-auto'>
-                <Command className='w-full'>
-                  <CommandList>
-                    <CommandGroup className=''>
-                      {searchResults.map((option) => (
-                        <CommandItem key={option.entityId} value={option.entityId} onSelect={() => handleSelect(option)}>
-                          {option.label}
-                          <Check className={cn('ml-auto', option.entityId === field.value?.entityId ? 'opacity-100' : 'opacity-0')} />
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                    <CommandEmpty>No origin found.</CommandEmpty>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            }
-          </Popover>
-        </FormItem>
-      )}
-    />
-  )
-}
+export const debouncedSearch = debounce((func, value) => func(value), 700)
 
 export default function Flights() {
   const [destHistory, setdestHistory] = useState<Option[]>([])
@@ -186,7 +81,18 @@ export default function Flights() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       tripType: 'oneWay',
+      airClass: 'economy',
       passengers: 1,
+      origin: {
+        label: 'Morocco',
+        skyId: 'MA',
+        entityId: '29475370',
+      },
+      destination: {
+        label: 'Dubai',
+        skyId: 'DXB',
+        entityId: '95673506',
+      },
     },
   })
 
@@ -210,10 +116,14 @@ export default function Flights() {
         <Card>
           <CardHeader>
             <CardTitle>Search Flights</CardTitle>
+            <pre>{JSON.stringify(form.getValues(), null, 2)}</pre>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className='space-y-4'
+              >
                 <div className='flex gap-4 w-full'>
                   <FormField
                     control={form.control}
@@ -221,7 +131,10 @@ export default function Flights() {
                     render={({ field }) => (
                       <FormItem className='flex-1'>
                         <FormLabel>Trip type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />
@@ -241,7 +154,10 @@ export default function Flights() {
                     render={({ field }) => (
                       <FormItem className='flex-1'>
                         <FormLabel>Trip type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={'economy'}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={'economy'}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />
@@ -251,7 +167,9 @@ export default function Flights() {
                             <SelectItem value='economy'>Economy</SelectItem>
                             <SelectItem value='premium'>Premium</SelectItem>
                             <SelectItem value='business'>Business</SelectItem>
-                            <SelectItem value='firstClass'>First Class</SelectItem>
+                            <SelectItem value='firstClass'>
+                              First Class
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
@@ -264,7 +182,15 @@ export default function Flights() {
                       <FormItem>
                         <FormLabel>Passengers</FormLabel>
                         <FormControl>
-                          <Input type='number' min={1} max={9} {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                          <Input
+                            type='number'
+                            min={1}
+                            max={9}
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value))
+                            }
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -273,58 +199,27 @@ export default function Flights() {
                 </div>
 
                 <div className='grid grid-cols-2 gap-4'>
-                  <OriginField />
-                </div>
-
-                <div className='grid grid-cols-2 gap-4'>
-                  <FormField
-                    control={form.control}
-                    name='departureDate'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Departure Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant='outline' className='w-full justify-start text-left'>
-                              <CalendarIcon className='mr-2 h-4 w-4' />
-                              {field.value ? format(field.value, 'PPP') : 'Select date'}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className='w-auto p-0'>
-                            <CalendarPrice mode='single' selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                  <OriginField
+                    mkey={'airports.search'}
+                    mfunc={flightService.searchAirports}
+                    formKey={'origin'}
                   />
-
-                  {form.watch('tripType') === 'roundTrip' && (
-                    <FormField
-                      control={form.control}
-                      name='returnDate'
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Return Date</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant='outline' className='w-full justify-start text-left'>
-                                <CalendarIcon className='mr-2 h-4 w-4' />
-                                {field.value ? format(field.value, 'PPP') : 'Select date'}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className='w-auto p-0'>
-                              <CalendarPrice mode='single' selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date() || date < form.getValues('departureDate')} />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
+                  <OriginField
+                    mkey={'airports.search'}
+                    mfunc={flightService.searchAirports}
+                    formKey={'destination'}
+                  />
                 </div>
 
-                <Button type='submit' className='w-full' disabled={searchMutation.isPending}>
+                <div className=''>
+                  <FlightsPriceField />
+                </div>
+
+                <Button
+                  type='submit'
+                  className='w-full'
+                  disabled={searchMutation.isPending}
+                >
                   {searchMutation.isPending ? 'Searching...' : 'Search Flights'}
                 </Button>
               </form>
@@ -343,10 +238,12 @@ export default function Flights() {
                       <div>
                         <p className='font-bold'>{flight.airline}</p>
                         <p>
-                          {format(new Date(flight.departureTime), 'PPP p')} - {format(new Date(flight.arrivalTime), 'PPP p')}
+                          {format(new Date(flight.departureTime), 'PPP p')} -{' '}
+                          {format(new Date(flight.arrivalTime), 'PPP p')}
                         </p>
                         <p>
-                          {flight.departureAirport.skyId} → {flight.arrivalAirport.skyId}
+                          {flight.departureAirport.skyId} →{' '}
+                          {flight.arrivalAirport.skyId}
                         </p>
                       </div>
                       <div>
@@ -367,13 +264,20 @@ export default function Flights() {
               <h2 className='text-2xl font-bold'>Popular Destinations</h2>
               <div className='grid grid-cols-3 gap-4'>
                 {popularRoutes.data.map((route, index) => (
-                  <Card key={index} className='cursor-pointer hover:shadow-lg transition-shadow'>
+                  <Card
+                    key={index}
+                    className='cursor-pointer hover:shadow-lg transition-shadow'
+                  >
                     <CardContent className='p-4'>
-                      <p className='font-bold'>{route.destination.presentation.title}</p>
+                      <p className='font-bold'>
+                        {route.destination.presentation.title}
+                      </p>
                       <p className='text-sm text-gray-500'>
                         {route.origin.skyId} → {route.destination.skyId}
                       </p>
-                      <p className='mt-2 text-lg font-bold'>From ${route.price}</p>
+                      <p className='mt-2 text-lg font-bold'>
+                        From ${route.price}
+                      </p>
                     </CardContent>
                   </Card>
                 ))}

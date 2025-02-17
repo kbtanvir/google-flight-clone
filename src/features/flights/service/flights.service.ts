@@ -1,3 +1,6 @@
+import axios from 'axios'
+import { addMonths, format } from 'date-fns'
+
 export interface Airport {
   skyId: string
   entityId: string
@@ -32,27 +35,6 @@ export interface Presentation {
   subtitle: string
 }
 
-interface Flight {
-  id: string
-  departureAirport: Airport
-  arrivalAirport: Airport
-  departureTime: Date
-  arrivalTime: Date
-  airline: string
-  price: number
-  available_seats: number
-  class: string
-}
-
-interface SearchParams {
-  origin?: string
-  destination?: string
-  departureDate?: Date
-  returnDate?: Date
-  passengers?: number
-  cabinClass?: string
-}
-
 interface PriceAlert {
   id: string
   route: {
@@ -63,142 +45,133 @@ interface PriceAlert {
   email: string
 }
 
-class SearchService {
-  async searchFlights(params: string): Promise<Flight[]> {
-    try {
-      const response = await fetch(`https://sky-scrapper.p.rapidapi.com/api/v2/flights/searchFlights?${params}`, {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-key': import.meta.env.VITE_RAPID_API_KEY,
-          'x-rapidapi-host': import.meta.env.VITE_RAPID_API_HOST,
-        },
-      })
-      const results = await response.json()
+export interface PriceCalanderData {
+  flights: {
+    noPriceLabel: string
+    groups: PCGroup[]
+    days: PCDay[]
+    currency: string
+  }
+}
 
-      if (!results.status) {
-        throw new Error('Nothing found')
-      }
-      return results.data
-    } catch (error) {
-      console.error('Error searching flights:', error)
-      throw error
+export interface PCDay {
+  day: Date
+  group: PCGroupEnum
+  price: number
+}
+
+export enum PCGroupEnum {
+  High = 'high',
+  Low = 'low',
+  Medium = 'medium',
+}
+
+export interface PCGroup {
+  id: PCGroupEnum
+  label: string
+}
+
+const httpService = axios.create({
+  baseURL: `https://sky-scrapper.p.rapidapi.com/api`,
+  headers: {
+    'x-rapidapi-key': import.meta.env.VITE_RAPID_API_KEY,
+    'x-rapidapi-host': import.meta.env.VITE_RAPID_API_HOST,
+  },
+})
+
+httpService.interceptors.response.use(
+  (response) => {
+    if (!response.data.status) {
+      throw new Error('Nothing found')
     }
+    response.data = response.data.data
+
+    return response
+  },
+  (error) => {
+    return Promise.reject(error.response.data)
+  }
+)
+
+class SearchService {
+  async searchFlights(params: string) {
+    return await httpService.get(`/v2/flights/searchFlights?${params}`)
   }
 
-  async getPopularRoutes(): Promise<{ origin: Airport; destination: Airport; price: number }[]> {
-    try {
-      const response = await fetch('/api/flights/popular')
-      return await response.json()
-    } catch (error) {
-      console.error('Error fetching popular routes:', error)
-      throw error
-    }
+  async getPopularRoutes() {
+    return await httpService.get('/flights/popular')
   }
 }
 
 class PricingService {
-  async getPriceHistory(origin: string, destination: string): Promise<{ date: Date; price: number }[]> {
-    try {
-      const response = await fetch(`/api/flights/price-history?origin=${origin}&destination=${destination}`)
-      return await response.json()
-    } catch (error) {
-      console.error('Error fetching price history:', error)
-      throw error
-    }
+  async getPriceHistory(origin: string, destination: string) {
+    return await httpService.get(`/flights/price-history`, {
+      params: { origin, destination },
+    })
   }
 
-  async createPriceAlert(alert: PriceAlert): Promise<void> {
-    try {
-      await fetch('/api/price-alerts', {
-        method: 'POST',
-        body: JSON.stringify(alert),
-      })
-    } catch (error) {
-      console.error('Error creating price alert:', error)
-      throw error
-    }
+  async createPriceAlert(alert: PriceAlert) {
+    return await httpService.post('/api/price-alerts', alert)
   }
 
-  async getPriceCalendar(origin: string, destination: string, month: Date): Promise<{ date: Date; price: number }[]> {
-    try {
-      const response = await fetch(`/api/flights/price-calendar`, {
-        method: 'POST',
-        body: JSON.stringify({ origin, destination, month }),
-      })
-      return await response.json()
-    } catch (error) {
-      console.error('Error fetching price calendar:', error)
-      throw error
-    }
+  async getPriceCalendar(
+    origin: string,
+    destination: string,
+    month: number | Date
+  ) {
+
+   
+    const fromMonth = format(month, 'yyyy-MM-dd')
+    const toDate = format(addMonths(month, 1), 'yyyy-MM-dd')
+
+    const res = await httpService.get<PriceCalanderData>(
+      `/v1/flights/getPriceCalendar`,
+      {
+        params: {
+          originSkyId: origin,
+          destinationSkyId: destination,
+          fromDate: fromMonth,
+          toDate,
+          currency: 'USD',
+        },
+      }
+    )
+
+    return res.data.flights
+
   }
 }
 
 class BookingService {
-  async getFlightDetails(flightId: string): Promise<Flight> {
-    try {
-      const response = await fetch(`/api/flights/${flightId}`)
-      return await response.json()
-    } catch (error) {
-      console.error('Error fetching flight details:', error)
-      throw error
-    }
+  async getFlightDetails(flightId: string) {
+    return await httpService.get(`/flights/${flightId}`)
   }
 
-  async reserveSeat(flightId: string, seatDetails: { passenger: string; seatNumber: string }): Promise<boolean> {
-    try {
-      const response = await fetch(`/api/flights/${flightId}/reserve`, {
-        method: 'POST',
-        body: JSON.stringify(seatDetails),
-      })
-      return await response.json()
-    } catch (error) {
-      console.error('Error reserving seat:', error)
-      throw error
-    }
+  async reserveSeat(
+    flightId: string,
+    seatDetails: { passenger: string; seatNumber: string }
+  ) {
+    return await httpService.post(`/flights/${flightId}/reserve`, seatDetails)
   }
 
-  async getBookingHistory(userId: string): Promise<Flight[]> {
-    try {
-      const response = await fetch(`/api/bookings/${userId}`)
-      return await response.json()
-    } catch (error) {
-      console.error('Error fetching booking history:', error)
-      throw error
-    }
+  async getBookingHistory(userId: string) {
+    return await httpService.get(`/api/bookings/${userId}`)
   }
 }
 
 class AirportService {
-  async searchAirports(query: string): Promise<Airport[]> {
-    // return [];
-    try {
-      const response = await fetch(`https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchAirport?query=${query}&locale=en-US`, {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-key': import.meta.env.VITE_RAPID_API_KEY,
-          'x-rapidapi-host': import.meta.env.VITE_RAPID_API_HOST,
-        },
-      })
-      const results = await response.json()
+  async searchAirports(query: string) {
+    const res = await httpService.get<Airport[]>(`/v1/flights/searchAirport`, {
+      params: { query, locale: 'en-US' },
+    })
 
-      if (!results.status) {
-        throw new Error('No airport found')
-      }
-      return results.data
-    } catch (error) {
-      console.error('Error searching airports:', error)
-      throw error
-    }
+    return res.data
   }
 
-  async getNearbyAirports(latitude: number, longitude: number): Promise<Airport[]> {
-    try {
-      const response = await fetch(`/api/airports/nearby?lat=${latitude}&lng=${longitude}`)
-      return await response.json()
-    } catch (error) {
-      console.error('Error fetching nearby airports:', error)
-      throw error
-    }
+  async getNearbyAirports(latitude: number, longitude: number) {
+    return await httpService.get(`/api/airports/nearby`, {
+      params: { lat: latitude, lng: longitude },
+    })
   }
 }
 
@@ -221,16 +194,27 @@ export class FlightService {
   getPopularRoutes = () => this.searchService.getPopularRoutes()
 
   // Pricing related methods
-  getPriceHistory = (origin: string, destination: string) => this.pricingService.getPriceHistory(origin, destination)
-  createPriceAlert = (alert: PriceAlert) => this.pricingService.createPriceAlert(alert)
-  getPriceCalendar = (origin: string, destination: string, month: Date) => this.pricingService.getPriceCalendar(origin, destination, month)
+  getPriceHistory = (origin: string, destination: string) =>
+    this.pricingService.getPriceHistory(origin, destination)
+  createPriceAlert = (alert: PriceAlert) =>
+    this.pricingService.createPriceAlert(alert)
+  getPriceCalendar = (origin: string, destination: string, month: Date) =>
+    this.pricingService.getPriceCalendar(origin, destination, month)
 
   // Booking related methods
-  getFlightDetails = (flightId: string) => this.bookingService.getFlightDetails(flightId)
-  reserveSeat = (flightId: string, seatDetails: { passenger: string; seatNumber: string }) => this.bookingService.reserveSeat(flightId, seatDetails)
-  getBookingHistory = (userId: string) => this.bookingService.getBookingHistory(userId)
+  getFlightDetails = (flightId: string) =>
+    this.bookingService.getFlightDetails(flightId)
+  reserveSeat = (
+    flightId: string,
+    seatDetails: { passenger: string; seatNumber: string }
+  ) => this.bookingService.reserveSeat(flightId, seatDetails)
+  getBookingHistory = (userId: string) =>
+    this.bookingService.getBookingHistory(userId)
 
   // Airport related methods
   searchAirports = (query: string) => this.airportService.searchAirports(query)
-  getNearbyAirports = (latitude: number, longitude: number) => this.airportService.getNearbyAirports(latitude, longitude)
+  getNearbyAirports = (latitude: number, longitude: number) =>
+    this.airportService.getNearbyAirports(latitude, longitude)
 }
+
+export const flightService = new FlightService()
