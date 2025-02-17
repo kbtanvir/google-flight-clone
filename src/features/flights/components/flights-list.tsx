@@ -1,9 +1,19 @@
-import { Info, Usb, Video, Wifi } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronDown, ChevronUp, Usb, Video, Wifi } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import useFeatureQuery from '../hooks/useFeatureQuery'
 
 const FlightList = () => {
   const { searchFlights } = useFeatureQuery()
+  const [expandedFlights, setExpandedFlights] = useState<string[]>([])
+
+  const toggleExpand = (flightId: string) => {
+    setExpandedFlights((prev) =>
+      prev.includes(flightId)
+        ? prev.filter((id) => id !== flightId)
+        : [...prev, flightId]
+    )
+  }
 
   const formatTime = (dateString: string | number | Date) => {
     return new Date(dateString).toLocaleTimeString('en-US', {
@@ -35,87 +45,165 @@ const FlightList = () => {
       {searchFlights.isSuccess && searchFlights.data && (
         <div className='space-y-4'>
           <h2 className='text-2xl font-bold'>Search Results</h2>
-          {searchFlights.data.map((flight) => (
-            <Card key={flight.id} className='hover:shadow-lg transition-shadow'>
-              <CardContent className='p-4'>
-                <div className='flex items-start justify-between'>
-                  <div className='flex items-center space-x-4'>
-                    <img
-                      src={getCarrierLogo(flight.carriers.marketing[0])}
-                      alt={flight.carriers.marketing[0].name}
-                      className='w-8 h-8 object-contain'
-                    />
-                    <div className='space-y-4'>
-                      {/* Flight times and route */}
-                      <div className='flex items-center space-x-6'>
-                        <div>
-                          <span className='text-lg font-semibold'>
-                            {formatTime(flight.departure)}
-                          </span>
-                          <span className='block text-sm text-gray-600'>
-                            {flight.origin.displayCode}
-                          </span>
-                        </div>
-                        <div className='flex flex-col items-center'>
-                          <span className='text-sm text-gray-500'>
-                            {formatDuration(flight.durationInMinutes)}
-                          </span>
-                          <div className='w-24 h-px bg-gray-300 my-1' />
-                          <span className='text-xs text-gray-500'>
-                            {flight.stopCount === 0
-                              ? 'Direct'
-                              : `${flight.stopCount} stops`}
-                          </span>
-                        </div>
-                        <div>
-                          <span className='text-lg font-semibold'>
-                            {formatTime(flight.arrival)}
-                          </span>
-                          <span className='block text-sm text-gray-600'>
-                            {flight.destination.displayCode}
-                          </span>
-                        </div>
-                      </div>
+          {searchFlights.data.map((flight) => {
+            const isExpanded = expandedFlights.includes(flight.legs[0].id)
+            return (
+              <Card
+                key={flight.legs[0].id}
+                className='hover:shadow-lg transition-shadow'
+              >
+                <CardContent className='p-4'>
+                  <div className='flex  justify-between'>
+                    <div className='flex items-center space-x-4'>
+                      <img
+                        src={getCarrierLogo(
+                          flight.legs[0].carriers.marketing[0]
+                        )}
+                        alt={flight.legs[0].carriers.marketing[0].name}
+                        className='w-8 h-8 object-contain'
+                      />
+                      <div className='space-y-4'>
+                        {/* Flight times and route */}
+                        <div className='flex items-center space-x-6'>
+                          <div>
+                            <span className='text-lg font-semibold'>
+                              {formatTime(flight.legs[0].departure)}
+                            </span>
+                            <span className='block text-sm text-gray-600'>
+                              {flight.legs[0].origin.displayCode}
+                            </span>
+                          </div>
+                          <div className='flex flex-col items-center'>
+                            <span className='text-sm text-gray-500'>
+                              {formatDuration(flight.legs[0].durationInMinutes)}
+                            </span>
+                            <div className='w-24 h-px bg-gray-300 my-1' />
+                            <button
+                              onClick={() => toggleExpand(flight.legs[0].id)}
+                              className='flex items-center text-xs text-blue-600 hover:text-blue-800'
+                            >
+                              {flight.legs[0].stopCount === 0
+                                ? 'Direct'
+                                : `${flight.legs[0].stopCount} stops`}
+                              {flight.legs[0].stopCount > 0 &&
+                                (isExpanded ? (
+                                  <ChevronUp className='w-4 h-4 ml-1' />
+                                ) : (
+                                  <ChevronDown className='w-4 h-4 ml-1' />
+                                ))}
+                            </button>
+                          </div>
+                          <div>
+                            <span className='text-lg font-semibold'>
+                              {formatTime(flight.legs[0].arrival)}
+                            </span>
+                            <span className='block text-sm text-gray-600'>
+                              {flight.legs[0].destination.displayCode}
+                            </span>
+                          </div>
 
-                      {/* Airline info and amenities */}
-                      <div className='flex items-center space-x-4 text-sm text-gray-600'>
-                        <span>{flight.carriers.marketing[0].name}</span>
-                        <span>•</span>
-                        <span>Flight {flight.segments[0].flightNumber}</span>
-                        <div className='flex items-center space-x-3 ml-4'>
-                          <div className='flex items-center space-x-1'>
-                            <Wifi className='w-4 h-4' />
-                            <span className='text-xs'>Wi-Fi</span>
+                          <div>
+                            <span className='text-lg font-semibold'>
+                              {(
+                                flight.legs[0].durationInMinutes * 0.12
+                              ).toFixed(0)}{' '}
+                              kg
+                            </span>
+                            <span className='block text-sm text-gray-600'>
+                              CO2e
+                            </span>
                           </div>
-                          <div className='flex items-center space-x-1'>
-                            <Usb className='w-4 h-4' />
-                            <span className='text-xs'>USB</span>
-                          </div>
-                          <div className='flex items-center space-x-1'>
-                            <Video className='w-4 h-4' />
-                            <span className='text-xs'>Entertainment</span>
+                        </div>
+
+                        {/* Airline info and amenities */}
+                        <div className='flex items-center space-x-4 text-sm text-gray-600'>
+                          <span>
+                            {flight.legs[0].carriers.marketing[0].name}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            Flight {flight.legs[0].segments[0].flightNumber}
+                          </span>
+                          <div className='flex items-center space-x-3 ml-4'>
+                            <div className='flex items-center space-x-1'>
+                              <Wifi className='w-4 h-4' />
+                              <span className='text-xs'>Wi-Fi</span>
+                            </div>
+                            <div className='flex items-center space-x-1'>
+                              <Usb className='w-4 h-4' />
+                              <span className='text-xs'>USB</span>
+                            </div>
+                            <div className='flex items-center space-x-1'>
+                              <Video className='w-4 h-4' />
+                              <span className='text-xs'>Entertainment</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Price and select button */}
-                  <div className='text-right'>
-                    <button className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors'>
-                      Select flight
-                    </button>
-                    <div className='flex items-center justify-end mt-2'>
-                      <Info className='w-4 h-4 text-gray-400 mr-1' />
-                      <span className='text-sm text-gray-600'>
-                        CO2: {(flight.durationInMinutes * 0.12).toFixed(0)} kg
+                    {/* Price and select button */}
+                    <div className='text-right flex flex-col  items-between justify-between '>
+                      <span className='text-lg font-semibold'>
+                        {flight.price.formatted}
                       </span>
+
+                      <button className='bg-blue-400 h-8 text-white px-4 rounded-md hover:bg-blue-500 transition-colors'>
+                        Select flight
+                      </button>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                  {/* Expandable Stop Details */}
+                  {isExpanded && flight.legs[0].stopCount > 0 && (
+                    <div className='mt-4 pl-12 border-t pt-4 space-y-3'>
+                      {flight.legs[0].segments.map((segment, index) => (
+                        <div
+                          key={index}
+                          className='flex items-center space-x-6'
+                        >
+                          <div>
+                            <span className='text-sm font-semibold'>
+                              {formatTime(segment.departure)}
+                            </span>
+                            <span className='block text-xs text-gray-600'>
+                              {segment.origin.displayCode}
+                            </span>
+                          </div>
+                          <div className='flex flex-col items-center'>
+                            <span className='text-xs text-gray-500'>
+                              {formatDuration(segment.durationInMinutes)}
+                            </span>
+                            <div className='w-16 h-px bg-gray-300 my-1' />
+                            <span className='text-xs text-gray-500'>
+                              Flight {segment.flightNumber}
+                            </span>
+                          </div>
+                          <div>
+                            <span className='text-sm font-semibold'>
+                              {formatTime(segment.arrival)}
+                            </span>
+                            <span className='block text-xs text-gray-600'>
+                              {segment.destination.displayCode}
+                            </span>
+                          </div>
+                          <div>
+                            <span className='text-sm font-semibold'>
+                              {segment.operatingCarrier.name}
+                            </span>
+                            <span className='block text-xs text-gray-600'>
+                              {segment.operatingCarrier.alternateId} -{' '}
+                              {segment.flightNumber}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

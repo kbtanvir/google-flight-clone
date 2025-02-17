@@ -71,7 +71,17 @@ export interface PCGroup {
   label: string
 }
 
-export interface FlightData {
+export interface FlightItineraries {
+  id: string
+  price: {
+    raw: number
+    formatted: string
+    pricingOptionId: string
+  }
+  legs: FlightLeg[]
+}
+
+export interface FlightLeg {
   id: string
   origin: FlightLocation
   destination: FlightLocation
@@ -164,10 +174,10 @@ httpService.interceptors.response.use(
 )
 
 class SearchService {
-  async searchFlights(params: string): Promise<FlightData[]> {
+  async searchFlights(params: string): Promise<FlightItineraries[]> {
     const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
 
-    return res.data.itineraries.map((item: any) => item.legs[0])
+    return res.data.itineraries
   }
 
   async getPopularRoutes() {
