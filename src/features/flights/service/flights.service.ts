@@ -71,6 +71,76 @@ export interface PCGroup {
   label: string
 }
 
+export interface FlightData {
+  id: string
+  origin: FlightLocation
+  destination: FlightLocation
+  durationInMinutes: number
+  stopCount: number
+  isSmallestStops: boolean
+  departure: Date
+  arrival: Date
+  timeDeltaInDays: number
+  carriers: FlightCarriers
+  segments: FlightSegment[]
+}
+
+export interface FlightCarriers {
+  marketing: {
+    id: number
+    alternateId: string
+    logoUrl: string
+    name: string
+  }[]
+  operationType: string
+}
+
+export interface FlightLocation {
+  id: string
+  entityId: string
+  name: string
+  displayCode: string
+  city: string
+  country: string
+  isHighlighted: boolean
+}
+
+export interface FlightSegment {
+  id: string
+  origin: SegmentDestination
+  destination: SegmentDestination
+  departure: Date
+  arrival: Date
+  durationInMinutes: number
+  flightNumber: string
+  marketingCarrier: FlightTingCarrier
+  operatingCarrier: FlightTingCarrier
+}
+
+export interface SegmentDestination {
+  flightPlaceId: string
+  displayCode: string
+  parent: FlightSegmentParent
+  name: string
+  type: string
+  country: string
+}
+
+export interface FlightSegmentParent {
+  flightPlaceId: string
+  displayCode: string
+  name: string
+  type: string
+}
+
+export interface FlightTingCarrier {
+  id: number
+  name: string
+  alternateId: string
+  allianceId: number
+  displayCode: string
+}
+
 const httpService = axios.create({
   baseURL: `https://sky-scrapper.p.rapidapi.com/api`,
   headers: {
@@ -94,8 +164,10 @@ httpService.interceptors.response.use(
 )
 
 class SearchService {
-  async searchFlights(params: string) {
-    return await httpService.get(`/v2/flights/searchFlights?${params}`)
+  async searchFlights(params: string): Promise<FlightData[]> {
+    const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
+
+    return res.data.itineraries.map((item: any) => item.legs[0])
   }
 
   async getPopularRoutes() {
@@ -119,8 +191,6 @@ class PricingService {
     destination: string,
     month: number | Date
   ) {
-
-   
     const fromMonth = format(month, 'yyyy-MM-dd')
     const toDate = format(addMonths(month, 1), 'yyyy-MM-dd')
 
@@ -138,7 +208,6 @@ class PricingService {
     )
 
     return res.data.flights
-
   }
 }
 

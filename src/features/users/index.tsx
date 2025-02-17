@@ -21,7 +21,7 @@ export default function Users() {
   const userQuery = useQuery({
     queryKey: ['users', location],
     queryFn: async () => {
-      console.log(location)
+  
       return await userService.listUser(new URLSearchParams(location))
     },
     enabled: !!location,

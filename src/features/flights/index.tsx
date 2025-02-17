@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { z } from 'zod'
 import { format } from 'date-fns'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { useSearch } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import debounce from 'lodash.debounce'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,7 +25,9 @@ import {
 import { Main } from '@/components/layout/main'
 import OriginField from './components/flights-origin-field'
 import FlightsPriceField from './components/flights-price-field'
+import useFeatureQuery from './hooks/useFeatureQuery'
 import { flightService } from './service/flights.service'
+import FlightList from './components/flights-list'
 
 const formSchema = z
   .object({
@@ -71,11 +71,11 @@ export type Option = { label: string; skyId: string; entityId: string }
 export const debouncedSearch = debounce((func, value) => func(value), 700)
 
 export default function Flights() {
-  const [destHistory, setdestHistory] = useState<Option[]>([])
-
-  const searchParams = useSearch({
-    from: '/(public)/flights',
+  const navigate = useNavigate({
+    from: '/flights',
   })
+
+  const { searchFlights } = useFeatureQuery()
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -84,30 +84,41 @@ export default function Flights() {
       airClass: 'economy',
       passengers: 1,
       origin: {
-        label: 'Morocco',
-        skyId: 'MA',
-        entityId: '29475370',
+        label: 'Agadir (AGA)',
+        skyId: 'AGA',
+        entityId: '95673640',
       },
       destination: {
-        label: 'Dubai',
-        skyId: 'DXB',
-        entityId: '95673506',
+        label: 'London Heathrow (LHR)',
+        skyId: 'LHR',
+        entityId: '95565050',
       },
+      departureDate: new Date(
+        format(new Date('2025-02-17T18:00:00.000Z'), 'yyyy-MM-dd')
+      ),
     },
   })
 
-  const searchMutation = useMutation({
-    mutationKey: ['flights.search'],
-    mutationFn: (values: FormSchema) => flightService.searchFlights(''),
-  })
-
-  const popularRoutes = useQuery({
-    queryKey: ['flights.popular'],
-    queryFn: flightService.getPopularRoutes,
-  })
-
   const onSubmit = async (values: FormSchema) => {
-    searchMutation.mutate(values)
+    navigate({
+      to: '/flights',
+      search: (params) => ({
+        ...params,
+        originSkyId: values.origin.skyId,
+        destinationSkyId: values.destination.skyId,
+        originEntityId: values.origin.entityId,
+        destinationEntityId: values.destination.entityId,
+        cabinClass: values.airClass,
+        adults: values.passengers,
+        date: format(values.departureDate, 'yyyy-MM-dd'),
+        // returnDate:
+        //   values.returnDate ?? format(values.returnDate!, 'yyyy-MM-dd'),
+        sortBy: 'best',
+        currency: 'USD',
+        market: 'en-US',
+        countryCode: 'US',
+      }),
+    })
   }
 
   return (
@@ -218,73 +229,16 @@ export default function Flights() {
                 <Button
                   type='submit'
                   className='w-full'
-                  disabled={searchMutation.isPending}
+                  disabled={searchFlights.isPending}
                 >
-                  {searchMutation.isPending ? 'Searching...' : 'Search Flights'}
+                  {searchFlights.isPending ? 'Searching...' : 'Search Flights'}
                 </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
 
-        <div className='mt-8'>
-          {searchMutation.isSuccess && searchMutation.data && (
-            <div className='space-y-4'>
-              <h2 className='text-2xl font-bold'>Search Results</h2>
-              {searchMutation.data.map((flight) => (
-                <Card key={flight.id}>
-                  <CardContent className='p-4'>
-                    <div className='flex justify-between items-center'>
-                      <div>
-                        <p className='font-bold'>{flight.airline}</p>
-                        <p>
-                          {format(new Date(flight.departureTime), 'PPP p')} -{' '}
-                          {format(new Date(flight.arrivalTime), 'PPP p')}
-                        </p>
-                        <p>
-                          {flight.departureAirport.skyId} →{' '}
-                          {flight.arrivalAirport.skyId}
-                        </p>
-                      </div>
-                      <div>
-                        <p className='text-2xl font-bold'>${flight.price}</p>
-                        <Button variant='outline' className='mt-2'>
-                          Select
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {!searchMutation.data && popularRoutes.isSuccess && (
-            <div className='space-y-4'>
-              <h2 className='text-2xl font-bold'>Popular Destinations</h2>
-              <div className='grid grid-cols-3 gap-4'>
-                {popularRoutes.data.map((route, index) => (
-                  <Card
-                    key={index}
-                    className='cursor-pointer hover:shadow-lg transition-shadow'
-                  >
-                    <CardContent className='p-4'>
-                      <p className='font-bold'>
-                        {route.destination.presentation.title}
-                      </p>
-                      <p className='text-sm text-gray-500'>
-                        {route.origin.skyId} → {route.destination.skyId}
-                      </p>
-                      <p className='mt-2 text-lg font-bold'>
-                        From ${route.price}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <FlightList />
       </div>
     </Main>
   )
