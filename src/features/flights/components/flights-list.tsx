@@ -1,11 +1,18 @@
 import { useState } from 'react'
+import { format } from 'date-fns'
+import { useNavigate } from '@tanstack/react-router'
 import { ChevronDown, ChevronUp, Usb, Video, Wifi } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import useFeatureQuery from '../hooks/useFeatureQuery'
+import { FlightLeg } from '../service/flights.service'
 
 const FlightList = () => {
   const { searchFlights } = useFeatureQuery()
   const [expandedFlights, setExpandedFlights] = useState<string[]>([])
+
+  const navigate = useNavigate({
+    from: '/flights',
+  })
 
   const toggleExpand = (flightId: string) => {
     setExpandedFlights((prev) =>
@@ -29,6 +36,22 @@ const FlightList = () => {
     return `${hours} hrs ${mins} min`
   }
 
+  function handleSelectFlight(item: FlightLeg): void {
+    navigate({
+      to: '/flight-details',
+      search: (params) => ({
+        ...params,
+        sessionId: searchFlights.data?.sessionId,
+        originSkyId: item.origin.id,
+        destinationSkyId: item.destination.id,
+        date: format(new Date(item.departure), 'yyyy-MM-dd'),
+        currency: 'USD',
+        market: 'en-US',
+        countryCode: 'US',
+      }),
+    })
+  }
+
   const getCarrierLogo = (carrier: {
     id?: number
     alternateId?: string
@@ -45,8 +68,9 @@ const FlightList = () => {
       {searchFlights.isSuccess && searchFlights.data && (
         <div className='space-y-4'>
           <h2 className='text-2xl font-bold'>Search Results</h2>
-          {searchFlights.data.map((flight) => {
+          {searchFlights.data.itineraries.map((flight) => {
             const isExpanded = expandedFlights.includes(flight.legs[0].id)
+
             return (
               <Card
                 key={flight.legs[0].id}
@@ -145,10 +169,13 @@ const FlightList = () => {
                     {/* Price and select button */}
                     <div className='text-right flex flex-col  items-between justify-between '>
                       <span className='text-lg font-semibold'>
-                        {flight.price.formatted}
+                        USD {flight.price.raw}
                       </span>
 
-                      <button className='bg-blue-400 h-8 text-white px-4 rounded-md hover:bg-blue-500 transition-colors'>
+                      <button
+                        onClick={()=> handleSelectFlight(flight.legs[0])}
+                        className='bg-blue-400 h-8 text-white px-4 rounded-md hover:bg-blue-500 transition-colors'
+                      >
                         Select flight
                       </button>
                     </div>

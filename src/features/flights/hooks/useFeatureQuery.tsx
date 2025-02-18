@@ -1,17 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
-import { useSearch } from '@tanstack/react-router'
+import { useMatch, useSearch } from '@tanstack/react-router'
 import { flightService } from '../service/flights.service'
 
 function useFeatureQuery() {
-  const location = useSearch({
+  const flightsLocation = useSearch({
     from: '/(public)/flights',
   })
 
+  const flightsMatch = useMatch({
+    from: '/(public)/flights',
+    shouldThrow: false,
+  })
+
   const searchFlights = useQuery({
-    queryKey: ['flights.search', location],
+    queryKey: ['flights.search', flightsLocation],
     queryFn: () =>
-      flightService.searchFlights(new URLSearchParams(location).toString()),
-    enabled: !!location,
+      flightService.searchFlights(
+        new URLSearchParams(flightsLocation).toString()
+      ),
+    enabled: !!flightsMatch,
   })
 
   return {

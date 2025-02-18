@@ -16,6 +16,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
 import { Route as publicFlightsImport } from './routes/(public)/flights'
+import { Route as publicFlightDetailsImport } from './routes/(public)/flight-details'
 import { Route as authSignInImport } from './routes/(auth)/sign-in'
 import { Route as authOtpImport } from './routes/(auth)/otp'
 import { Route as auth500Import } from './routes/(auth)/500'
@@ -160,6 +161,12 @@ const AuthenticatedSettingsRouteLazyRoute =
 const publicFlightsRoute = publicFlightsImport.update({
   id: '/(public)/flights',
   path: '/flights',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const publicFlightDetailsRoute = publicFlightDetailsImport.update({
+  id: '/(public)/flight-details',
+  path: '/flight-details',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -321,6 +328,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof authSignInImport
+      parentRoute: typeof rootRoute
+    }
+    '/(public)/flight-details': {
+      id: '/(public)/flight-details'
+      path: '/flight-details'
+      fullPath: '/flight-details'
+      preLoaderRoute: typeof publicFlightDetailsImport
       parentRoute: typeof rootRoute
     }
     '/(public)/flights': {
@@ -539,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500LazyRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
+  '/flight-details': typeof publicFlightDetailsRoute
   '/flights': typeof publicFlightsRoute
   '/settings': typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   '/forgot-password': typeof authForgotPasswordLazyRoute
@@ -566,6 +581,7 @@ export interface FileRoutesByTo {
   '/500': typeof errors500LazyRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
+  '/flight-details': typeof publicFlightDetailsRoute
   '/flights': typeof publicFlightsRoute
   '/forgot-password': typeof authForgotPasswordLazyRoute
   '/sign-in-2': typeof authSignIn2LazyRoute
@@ -594,6 +610,7 @@ export interface FileRoutesById {
   '/(auth)/500': typeof auth500Route
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/sign-in': typeof authSignInRoute
+  '/(public)/flight-details': typeof publicFlightDetailsRoute
   '/(public)/flights': typeof publicFlightsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordLazyRoute
@@ -625,6 +642,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/otp'
     | '/sign-in'
+    | '/flight-details'
     | '/flights'
     | '/settings'
     | '/forgot-password'
@@ -651,6 +669,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/otp'
     | '/sign-in'
+    | '/flight-details'
     | '/flights'
     | '/forgot-password'
     | '/sign-in-2'
@@ -677,6 +696,7 @@ export interface FileRouteTypes {
     | '/(auth)/500'
     | '/(auth)/otp'
     | '/(auth)/sign-in'
+    | '/(public)/flight-details'
     | '/(public)/flights'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
@@ -707,6 +727,7 @@ export interface RootRouteChildren {
   auth500Route: typeof auth500Route
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
+  publicFlightDetailsRoute: typeof publicFlightDetailsRoute
   publicFlightsRoute: typeof publicFlightsRoute
   authForgotPasswordLazyRoute: typeof authForgotPasswordLazyRoute
   authSignIn2LazyRoute: typeof authSignIn2LazyRoute
@@ -723,6 +744,7 @@ const rootRouteChildren: RootRouteChildren = {
   auth500Route: auth500Route,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,
+  publicFlightDetailsRoute: publicFlightDetailsRoute,
   publicFlightsRoute: publicFlightsRoute,
   authForgotPasswordLazyRoute: authForgotPasswordLazyRoute,
   authSignIn2LazyRoute: authSignIn2LazyRoute,
@@ -748,6 +770,7 @@ export const routeTree = rootRoute
         "/(auth)/500",
         "/(auth)/otp",
         "/(auth)/sign-in",
+        "/(public)/flight-details",
         "/(public)/flights",
         "/(auth)/forgot-password",
         "/(auth)/sign-in-2",
@@ -780,6 +803,9 @@ export const routeTree = rootRoute
     },
     "/(auth)/sign-in": {
       "filePath": "(auth)/sign-in.tsx"
+    },
+    "/(public)/flight-details": {
+      "filePath": "(public)/flight-details.tsx"
     },
     "/(public)/flights": {
       "filePath": "(public)/flights.tsx"

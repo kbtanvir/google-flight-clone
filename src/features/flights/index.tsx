@@ -23,11 +23,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Main } from '@/components/layout/main'
+import FlightList from './components/flights-list'
 import OriginField from './components/flights-origin-field'
-import FlightsPriceField from './components/flights-price-field'
+import FlightsPriceCalanderField from './components/flights-price-calander-field'
 import useFeatureQuery from './hooks/useFeatureQuery'
 import { flightService } from './service/flights.service'
-import FlightList from './components/flights-list'
 
 const formSchema = z
   .object({
@@ -93,31 +93,39 @@ export default function Flights() {
         skyId: 'LHR',
         entityId: '95565050',
       },
-      departureDate: new Date(
-        format(new Date('2025-02-17T18:00:00.000Z'), 'yyyy-MM-dd')
-      ),
+      // departureDate: new Date(
+      //   format(new Date('2025-02-17T18:00:00.000Z'), 'yyyy-MM-dd')
+      // ),
     },
   })
 
   const onSubmit = async (values: FormSchema) => {
     navigate({
       to: '/flights',
-      search: (params) => ({
-        ...params,
-        originSkyId: values.origin.skyId,
-        destinationSkyId: values.destination.skyId,
-        originEntityId: values.origin.entityId,
-        destinationEntityId: values.destination.entityId,
-        cabinClass: values.airClass,
-        adults: values.passengers,
-        date: format(values.departureDate, 'yyyy-MM-dd'),
-        // returnDate:
-        //   values.returnDate ?? format(values.returnDate!, 'yyyy-MM-dd'),
-        sortBy: 'best',
-        currency: 'USD',
-        market: 'en-US',
-        countryCode: 'US',
-      }),
+      search: (params) => {
+        const newParams: any = {
+          ...params,
+          originSkyId: values.origin.skyId,
+          destinationSkyId: values.destination.skyId,
+          originEntityId: values.origin.entityId,
+          destinationEntityId: values.destination.entityId,
+          cabinClass: values.airClass,
+          adults: values.passengers,
+          date: format(new Date(values.departureDate), 'yyyy-MM-dd'),
+          sortBy: 'best',
+          currency: 'USD',
+          market: 'en-US',
+          countryCode: 'US',
+        }
+
+        if (values.tripType === 'roundTrip') {
+          newParams.returnDate = format(
+            new Date(values.returnDate!),
+            'yyyy-MM-dd'
+          )
+        }
+        return newParams
+      },
     })
   }
 
@@ -127,7 +135,7 @@ export default function Flights() {
         <Card>
           <CardHeader>
             <CardTitle>Search Flights</CardTitle>
-            <pre>{JSON.stringify(form.getValues(), null, 2)}</pre>
+            {/* <pre>{JSON.stringify(form.getValues(), null, 2)}</pre> */}
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -223,7 +231,7 @@ export default function Flights() {
                 </div>
 
                 <div className=''>
-                  <FlightsPriceField />
+                  <FlightsPriceCalanderField />
                 </div>
 
                 <Button

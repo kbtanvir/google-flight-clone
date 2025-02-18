@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { addMonths, format } from 'date-fns'
+import { getFlightDetailsData } from '../data/data'
 
 export interface Airport {
   skyId: string
@@ -71,6 +72,11 @@ export interface PCGroup {
   label: string
 }
 
+export interface FlightData {
+  sessionId: string
+  itineraries: FlightItineraries[]
+}
+
 export interface FlightItineraries {
   id: string
   price: {
@@ -79,6 +85,57 @@ export interface FlightItineraries {
     pricingOptionId: string
   }
   legs: FlightLeg[]
+}
+
+export interface FlightItineraryDetails {
+  legs: {
+    id: string
+    origin: {
+      id: string
+      name: string
+      displayCode: string
+      city: string
+    }
+    destination: {
+      id: string
+      name: string
+      displayCode: string
+      city: string
+    }
+    segments: FlightSegment[]
+    duration: number
+    stopCount: number
+    departure: Date
+    arrival: Date
+    dayChange: number
+  }[]
+  pricingOptions: FlightItinerariesPricingOption[]
+  isTransferRequired: boolean
+  destinationImage: string
+}
+
+export interface FlightItinerariesPricingOption {
+  agents: FlightItenaryAgent[]
+  totalPrice: number
+}
+
+export interface FlightItenaryAgent {
+  id: string
+  name: string
+  isCarrier: boolean
+  bookingProposition: string
+  url: string
+  price: number
+  rating: Rating
+  updateStatus: string
+  segments: FlightSegment[]
+  isDirectDBookUrl: boolean
+  quoteAge: number
+}
+
+export interface Rating {
+  value: number
+  count: number
 }
 
 export interface FlightLeg {
@@ -174,10 +231,10 @@ httpService.interceptors.response.use(
 )
 
 class SearchService {
-  async searchFlights(params: string): Promise<FlightItineraries[]> {
+  async searchFlights(params: string): Promise<FlightData> {
     const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
-
-    return res.data.itineraries
+    const { itineraries, flightsSessionId } = res.data
+    return { itineraries, sessionId: flightsSessionId }
   }
 
   async getPopularRoutes() {
@@ -222,8 +279,13 @@ class PricingService {
 }
 
 class BookingService {
-  async getFlightDetails(flightId: string) {
-    return await httpService.get(`/flights/${flightId}`)
+  async getFlightDetails(query: string) {
+    // const res = await httpService.get(`/v1/flights/getFlightDetails`, {
+    //   params: { query, locale: 'en-US' },
+    // })
+
+    // return res.data.itinerary
+    return await Promise.resolve(getFlightDetailsData.data.itinerary)
   }
 
   async reserveSeat(
@@ -281,8 +343,8 @@ export class FlightService {
     this.pricingService.getPriceCalendar(origin, destination, month)
 
   // Booking related methods
-  getFlightDetails = (flightId: string) =>
-    this.bookingService.getFlightDetails(flightId)
+  getFlightDetails = (query: string) =>
+    this.bookingService.getFlightDetails(query)
   reserveSeat = (
     flightId: string,
     seatDetails: { passenger: string; seatNumber: string }

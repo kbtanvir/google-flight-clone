@@ -13,7 +13,7 @@ import {
 import { FormSchema } from '..'
 import { flightService } from '../service/flights.service'
 
-function FlightsPriceField() {
+function FlightsPriceCalanderField() {
   const form = useFormContext<FormSchema>()
 
   const flightPrices = useQuery({
@@ -102,4 +102,4 @@ function FlightsPriceField() {
   )
 }
 
-export default FlightsPriceField
+export default FlightsPriceCalanderField
