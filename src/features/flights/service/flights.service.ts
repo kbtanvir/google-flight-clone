@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { addMonths, format } from 'date-fns'
-import { getFlightDetailsData } from '../data/data'
+import { getAirportData, getFlightDetailsData, getFlightsData, getPriceCalendarData } from '../data/data'
 
 export interface Airport {
   skyId: string
@@ -208,6 +208,16 @@ export interface FlightTingCarrier {
   displayCode: string
 }
 
+export interface DetailsParams {
+  legs: {
+    destination: string
+    origin: string
+    date: string
+  }
+  sessionId: string
+  itineraryId: string
+}
+
 const httpService = axios.create({
   baseURL: `https://sky-scrapper.p.rapidapi.com/api`,
   headers: {
@@ -231,10 +241,14 @@ httpService.interceptors.response.use(
 )
 
 class SearchService {
-  async searchFlights(params: string): Promise<FlightData> {
-    const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
-    const { itineraries, flightsSessionId } = res.data
-    return { itineraries, sessionId: flightsSessionId }
+  async searchFlights(params: string): Promise<any> {
+    // const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
+    // const { itineraries, flightsSessionId } = res.data
+    // return { itineraries, sessionId: flightsSessionId }
+
+    const { itineraries, flightsSessionId } = getFlightsData.data
+    return await Promise.resolve({ itineraries, sessionId: flightsSessionId })
+
   }
 
   async getPopularRoutes() {
@@ -258,30 +272,51 @@ class PricingService {
     destination: string,
     month: number | Date
   ) {
-    const fromMonth = format(month, 'yyyy-MM-dd')
-    const toDate = format(addMonths(month, 1), 'yyyy-MM-dd')
+    // const fromMonth = format(month, 'yyyy-MM-dd')
+    // const toDate = format(addMonths(month, 1), 'yyyy-MM-dd')
 
-    const res = await httpService.get<PriceCalanderData>(
-      `/v1/flights/getPriceCalendar`,
-      {
-        params: {
-          originSkyId: origin,
-          destinationSkyId: destination,
-          fromDate: fromMonth,
-          toDate,
-          currency: 'USD',
-        },
-      }
-    )
+    // const res = await httpService.get<PriceCalanderData>(
+    //   `/v1/flights/getPriceCalendar`,
+    //   {
+    //     params: {
+    //       originSkyId: origin,
+    //       destinationSkyId: destination,
+    //       fromDate: fromMonth,
+    //       toDate,
+    //       currency: 'USD',
+    //     },
+    //   }
+    // )
 
-    return res.data.flights
+    // return res.data.flights
+    return await Promise.resolve(getPriceCalendarData.data.flights)
   }
 }
 
 class BookingService {
-  async getFlightDetails(query: string) {
+  async getFlightDetails(params: DetailsParams) {
+    console.log(params)
+    // const legsArray = [
+    //   {
+    //     destination: params.legs.destination,
+    //     origin: params.legs.origin,
+    //     date: params.legs.date,
+    //   },
+    // ]
+
+    // First stringify the legs array
+    // const legsString = JSON.stringify(legsArray)
+
+    // Double encode the legs parameter
+    // const legsString = `"[{\\"destination\\":\\"${params.legs.destination}\\",\\"origin\\":\\"${params.legs.origin}\\",\\"date\\":\\"${params.legs.date}\\"}]"`
+
     // const res = await httpService.get(`/v1/flights/getFlightDetails`, {
-    //   params: { query, locale: 'en-US' },
+    //   params: {
+    //     legs: legsString,
+    //     sessionId: params.sessionId,
+    //     itineraryId: params.itineraryId,
+    //     locale: 'en-US',
+    //   },
     // })
 
     // return res.data.itinerary
@@ -301,12 +336,13 @@ class BookingService {
 }
 
 class AirportService {
-  async searchAirports(query: string) {
-    const res = await httpService.get<Airport[]>(`/v1/flights/searchAirport`, {
-      params: { query, locale: 'en-US' },
-    })
+  async searchAirports(query: string): Promise<any> {
+    // const res = await httpService.get<Airport[]>(`/v1/flights/searchAirport`, {
+    //   params: { query, locale: 'en-US' },
+    // })
 
-    return res.data
+    // return res.data
+    return await Promise.resolve(getAirportData.data)
   }
 
   async getNearbyAirports(latitude: number, longitude: number) {
@@ -343,7 +379,7 @@ export class FlightService {
     this.pricingService.getPriceCalendar(origin, destination, month)
 
   // Booking related methods
-  getFlightDetails = (query: string) =>
+  getFlightDetails = (query: DetailsParams) =>
     this.bookingService.getFlightDetails(query)
   reserveSeat = (
     flightId: string,

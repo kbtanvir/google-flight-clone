@@ -39,15 +39,15 @@ const FlightList = () => {
   function handleSelectFlight(item: FlightLeg): void {
     navigate({
       to: '/flight-details',
-      search: (params) => ({
-        ...params,
-        sessionId: searchFlights.data?.sessionId,
+      search: () => ({
         originSkyId: item.origin.id,
         destinationSkyId: item.destination.id,
         date: format(new Date(item.departure), 'yyyy-MM-dd'),
+        sessionId: searchFlights.data?.sessionId,
         currency: 'USD',
         market: 'en-US',
         countryCode: 'US',
+        itineraryId: item.id
       }),
     })
   }
@@ -73,7 +73,7 @@ const FlightList = () => {
 
             return (
               <Card
-                key={flight.legs[0].id}
+                key={flight.id}
                 className='hover:shadow-lg transition-shadow'
               >
                 <CardContent className='p-4'>
@@ -173,7 +173,7 @@ const FlightList = () => {
                       </span>
 
                       <button
-                        onClick={()=> handleSelectFlight(flight.legs[0])}
+                        onClick={() => handleSelectFlight(flight.legs[0])}
                         className='bg-blue-400 h-8 text-white px-4 rounded-md hover:bg-blue-500 transition-colors'
                       >
                         Select flight
