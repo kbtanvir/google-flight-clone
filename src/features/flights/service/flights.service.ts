@@ -221,7 +221,7 @@ export interface FlightDetailsParams {
 }
 
 const httpService = axios.create({
-  baseURL: `https://sky-scrapper.p.rapidapi.com/api`,
+  baseURL: import.meta.env.VITE_BASE_URL,
   headers: {
     'x-rapidapi-key': import.meta.env.VITE_RAPID_API_KEY,
     'x-rapidapi-host': import.meta.env.VITE_RAPID_API_HOST,
