@@ -98,7 +98,13 @@ function CalendarPrice({
         IconRight: () => <ChevronRight className='h-4 w-4' />,
 
         DayContent(props) {
-          return <CustomDay prices={prices} displayMonth={props.displayMonth} date={props.date} />
+          return (
+            <CustomDay
+              prices={prices}
+              displayMonth={props.displayMonth}
+              date={props.date}
+            />
+          )
         },
       }}
       {...props}

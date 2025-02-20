@@ -31,18 +31,17 @@ const FlightList = () => {
     return `${hours} hrs ${mins} min`
   }
 
-  function handleSelectFlight(item: FlightLeg): void {
+  function handleSelectFlight(item: FlightLeg, flightId: string): void {
     navigate({
       to: '/flight-details',
       search: () => ({
-        originSkyId: item.origin.id,
-        destinationSkyId: item.destination.id,
-        date: format(new Date(item.departure), 'yyyy-MM-dd'),
+        legs: item.segments.map((item) => ({
+          destination: item.destination.displayCode,
+          origin: item.origin.displayCode,
+          date: format(item.departure, 'yyyy-MM-dd'),
+        })),
         sessionId: searchFlightsQuery.data?.sessionId,
-        currency: 'USD',
-        market: 'en-US',
-        countryCode: 'US',
-        itineraryId: item.id,
+        itineraryId: flightId,
       }),
     })
   }
@@ -143,19 +142,18 @@ const FlightList = () => {
                           <span>
                             Flight {flight.legs[0].segments[0].flightNumber}
                           </span>
-                            <div className='flex items-center space-x-1'>
-                              <Wifi className='w-4 h-4' />
-                              <span className='text-xs'>Wi-Fi</span>
-                            </div>
-                            <div className='flex items-center space-x-1'>
-                              <Usb className='w-4 h-4' />
-                              <span className='text-xs'>USB</span>
-                            </div>
-                            <div className='flex items-center space-x-1'>
-                              <Video className='w-4 h-4' />
-                              <span className='text-xs'>Entertainment</span>
-                            </div>
-                          
+                          <div className='flex items-center space-x-1'>
+                            <Wifi className='w-4 h-4' />
+                            <span className='text-xs'>Wi-Fi</span>
+                          </div>
+                          <div className='flex items-center space-x-1'>
+                            <Usb className='w-4 h-4' />
+                            <span className='text-xs'>USB</span>
+                          </div>
+                          <div className='flex items-center space-x-1'>
+                            <Video className='w-4 h-4' />
+                            <span className='text-xs'>Entertainment</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -167,7 +165,9 @@ const FlightList = () => {
                       </span>
 
                       <button
-                        onClick={() => handleSelectFlight(flight.legs[0])}
+                        onClick={() =>
+                          handleSelectFlight(flight.legs[0], flight.id)
+                        }
                         className='bg-blue-400 h-8 text-white px-4 rounded-md hover:bg-blue-500 transition-colors'
                       >
                         Select flight
@@ -177,7 +177,7 @@ const FlightList = () => {
 
                   {/* Expandable Stop Details */}
                   {isExpanded && flight.legs[0].stopCount > 0 && (
-                    <div className='mt-4 pl-12 border-t pt-4 space-y-3'>
+                    <div className='mt-4 pl-12 max-sm:pl-0 border-t pt-4 space-y-3'>
                       {flight.legs[0].segments.map((segment, index) => (
                         <div
                           key={index}

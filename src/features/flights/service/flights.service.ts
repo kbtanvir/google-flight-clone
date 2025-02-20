@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { addMonths, format } from 'date-fns'
-import { getFlightsData } from '../data/data'
+import { FormSchema } from '../hooks/useFeatureQuery'
 
 export interface Airport {
   skyId: string
@@ -210,13 +210,13 @@ export interface FlightTingCarrier {
   displayCode: string
 }
 
-export interface DetailsParams {
+export interface FlightDetailsParams {
   legs: {
     destination: string
     origin: string
     date: string
-  }
-  sessionId: string
+  }[]
+  sessionId?: string
   itineraryId: string
 }
 
@@ -243,13 +243,38 @@ httpService.interceptors.response.use(
 )
 
 class SearchService {
-  async searchFlights(params: string) {
-    // const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
-    // const { itineraries, flightsSessionId } = res.data
-    // return { itineraries, sessionId: flightsSessionId }
+  async searchFlights(values: FormSchema): Promise<FlightData | undefined> {
+    const query: any = {
+      tripType: values.tripType,
+      originLabel: values.origin.label,
+      originSkyId: values.origin.skyId,
+      destinationSkyId: values.destination.skyId,
+      destinationLabel: values.destination.label,
+      originEntityId: values.origin.entityId,
+      destinationEntityId: values.destination.entityId,
+      cabinClass: values.cabinClass,
+      adults: values.adults,
+      date: format(new Date(values.departureDate), 'yyyy-MM-dd'),
+      sortBy: 'best',
+      currency: 'USD',
+      market: 'en-US',
+      countryCode: 'US',
+    }
 
-    const { itineraries, flightsSessionId } = getFlightsData.data
-    return await Promise.resolve({ itineraries, sessionId: flightsSessionId })
+    if (values.tripType === 'roundTrip') {
+      query.returnDate = format(new Date(values.returnDate!), 'yyyy-MM-dd')
+    }
+
+    const res = await httpService.get(`/v2/flights/searchFlights`, {
+      params: query,
+    })
+
+    const { itineraries, flightsSessionId } = res.data
+
+    return { itineraries, sessionId: flightsSessionId }
+
+    // const { itineraries, flightsSessionId } = getFlightsData.data
+    // return await Promise.resolve({ itineraries, sessionId: flightsSessionId })
   }
 
   async getPopularRoutes() {
@@ -290,46 +315,27 @@ class PricingService {
     )
 
     return res.data.flights
-    // return await Promise.resolve(getPriceCalendarData.data.flights)
   }
 }
 
 class BookingService {
   async getFlightDetails(
-    params: DetailsParams
+    params: FlightDetailsParams
   ): Promise<FlightItineraryDetails> {
-    // Create the exact string format needed with escaped quotes
-    const legsString = `"[{\\"destination\\":\\"${params.legs.destination}\\",\\"origin\\":\\"${params.legs.origin}\\",\\"date\\":\\"${params.legs.date}\\"}]"`
+    try {
+      const response = await httpService.get(`/v1/flights/getFlightDetails`, {
+        params: {
+          ...params,
+          legs: JSON.stringify(params.legs),
+        },
+      })
 
-    // Split itineraryId into array if it contains multiple ids
-    const itineraryIds = params.itineraryId.split('|')
-    let lastError = null
-
-    // Try each itinerary sequentially
-    for (const itineraryId of itineraryIds) {
-      try {
-        const response = await httpService.get(`/v1/flights/getFlightDetails`, {
-          params: {
-            legs: legsString,
-            sessionId: params.sessionId,
-            itineraryId: itineraryId.trim(),
-            locale: 'en-US',
-          },
-        })
-
-        return response.data.itinerary
-      } catch (error) {
-        lastError = error
-        console.log(
-          `Failed to fetch details for itinerary ${itineraryId}:`,
-          error
-        )
-        continue
-      }
+      return response.data.itinerary
+    } catch (error: any) {
+      throw new Error(error.message)
     }
 
-    // If we get here, all itineraries failed
-    throw new Error(`Failed to fetch flight details for all itineraries.`)
+    // return await Promise.resolve(getFlightDetailsData.data.itinerary)
   }
 
   async reserveSeat(
@@ -351,7 +357,6 @@ class AirportService {
     })
 
     return res.data
-    // return await Promise.resolve(getAirportData.data)
   }
 
   async getNearbyAirports(latitude: number, longitude: number) {
@@ -376,7 +381,8 @@ export class FlightService {
   }
 
   // Search related methods
-  searchFlights = (query: string) => this.searchService.searchFlights(query)
+  searchFlights = (params: FormSchema) =>
+    this.searchService.searchFlights(params)
   getPopularRoutes = () => this.searchService.getPopularRoutes()
 
   // Pricing related methods
@@ -388,8 +394,8 @@ export class FlightService {
     this.pricingService.getPriceCalendar(origin, destination, month)
 
   // Booking related methods
-  getFlightDetails = (query: DetailsParams) =>
-    this.bookingService.getFlightDetails(query)
+  getFlightDetails = (params: FlightDetailsParams) =>
+    this.bookingService.getFlightDetails(params)
   reserveSeat = (
     flightId: string,
     seatDetails: { passenger: string; seatNumber: string }

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const publicAxios = axios.create({
-  baseURL: `${import.meta.env.VITE_BASE_URL}`,// Adjust your API base URL accordingly
+  baseURL: `${import.meta.env.VITE_BASE_URL}`, // Adjust your API base URL accordingly
 })
 
 // Add a request interceptor to inject the accessToken into the headers

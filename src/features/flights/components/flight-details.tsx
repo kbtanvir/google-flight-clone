@@ -24,17 +24,9 @@ function FlightDetails() {
   })
 
   const flightDetailsQuery = useQuery({
-    queryKey: ['flights.details', new URLSearchParams(searchParams).toString()],
+    queryKey: ['flights.details', searchParams],
     queryFn: () =>
-      flightService.getFlightDetails({
-        legs: {
-          destination: searchParams.destinationSkyId,
-          origin: searchParams.originSkyId,
-          date: searchParams.date,
-        },
-        sessionId: searchParams.sessionId,
-        itineraryId: searchParams.itineraryId,
-      }),
+      flightService.getFlightDetails(searchParams),
     enabled: !!detailsMatch,
     refetchOnMount: false,
   })
@@ -146,7 +138,7 @@ function FlightDetails() {
 
           {/* Expandable Stop Details */}
           {isStopsExpanded && flight.stopCount > 0 && (
-            <div className='mt-4 pl-12 border-t pt-4 space-y-3'>
+            <div className='mt-4 pl-12 max-sm:pl-0 border-t pt-4 space-y-3'>
               {flight.segments.map((segment) => (
                 <div key={segment.id} className='flex items-center space-x-6'>
                   <div>

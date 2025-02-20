@@ -441,7 +441,6 @@ const getValidChildren = (children: React.ReactNode) =>
       return React.isValidElement(child)
     }
     throw new Error(`${PinInput.displayName} contains invalid children.`)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as React.ReactElement<any>[]
 
 const getInputFieldCount = (children: React.ReactNode) =>

@@ -3,6 +3,7 @@ import { useFormContext } from 'react-hook-form'
 import { useMutation } from '@tanstack/react-query'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { debouncedSearch } from '@/utils/debounce'
 import {
   Command,
   CommandEmpty,
@@ -22,17 +23,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { debouncedSearch, FormSchema, Option } from '..'
+import { FormSchema, Option } from '../hooks/useFeatureQuery'
 import { Airport } from '../service/flights.service'
 
 export default function OriginField({
   mkey,
   mfunc,
   formKey,
+  label = '',
 }: {
   mkey: string
   mfunc: (v: string) => Promise<Airport[]>
   formKey: any
+  label: string
 }) {
   const [showOption, setshowOption] = useState(false)
   const form = useFormContext<FormSchema>()
@@ -75,7 +78,7 @@ export default function OriginField({
       name={formKey}
       render={({ field }) => (
         <FormItem className=' flex flex-col gap-1'>
-          <FormLabel>Origin</FormLabel>
+          <FormLabel>{label}</FormLabel>
           <Popover open={showOption}>
             <FormControl>
               <PopoverTrigger>
