@@ -58,7 +58,7 @@ function useFeatureQuery() {
     shouldThrow: false,
   })
 
-  const searchFlightsQuery = useQuery<FlightData>({
+  const searchFlightsQuery = useQuery({
     queryKey: ['flights.search', searchParams],
     queryFn: () =>
       flightService.searchFlights(new URLSearchParams(searchParams).toString()),

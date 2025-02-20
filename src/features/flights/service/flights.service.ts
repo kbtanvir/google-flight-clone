@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { getFlightDetailsData, getPriceCalendarData } from '../data/data'
 import { addMonths, format } from 'date-fns'
+import { getFlightsData } from '../data/data'
 
 export interface Airport {
   skyId: string
@@ -173,6 +173,7 @@ export interface FlightLocation {
 }
 
 export interface FlightSegment {
+  duration: number
   id: string
   origin: SegmentDestination
   destination: SegmentDestination
@@ -201,6 +202,7 @@ export interface FlightSegmentParent {
 }
 
 export interface FlightTingCarrier {
+  logo: string | undefined
   id: number
   name: string
   alternateId: string
@@ -242,12 +244,12 @@ httpService.interceptors.response.use(
 
 class SearchService {
   async searchFlights(params: string) {
-    const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
-    const { itineraries, flightsSessionId } = res.data
-    return { itineraries, sessionId: flightsSessionId }
+    // const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
+    // const { itineraries, flightsSessionId } = res.data
+    // return { itineraries, sessionId: flightsSessionId }
 
-    // const { itineraries, flightsSessionId } = getFlightsData.data
-    // return await Promise.resolve({ itineraries, sessionId: flightsSessionId })
+    const { itineraries, flightsSessionId } = getFlightsData.data
+    return await Promise.resolve({ itineraries, sessionId: flightsSessionId })
   }
 
   async getPopularRoutes() {
@@ -293,39 +295,41 @@ class PricingService {
 }
 
 class BookingService {
-  async getFlightDetails(params: DetailsParams)
-  // :Promise<FlightItineraryDetails> 
-  {
-  //  // Create the exact string format needed with escaped quotes
-  //  const legsString = `"[{\\"destination\\":\\"${params.legs.destination}\\",\\"origin\\":\\"${params.legs.origin}\\",\\"date\\":\\"${params.legs.date}\\"}]"`;
+  async getFlightDetails(
+    params: DetailsParams
+  ): Promise<FlightItineraryDetails> {
+    // Create the exact string format needed with escaped quotes
+    const legsString = `"[{\\"destination\\":\\"${params.legs.destination}\\",\\"origin\\":\\"${params.legs.origin}\\",\\"date\\":\\"${params.legs.date}\\"}]"`
 
-  //  // Split itineraryId into array if it contains multiple ids
-  //  const itineraryIds = params.itineraryId.split('|');
-  //  let lastError = null;
- 
-  //  // Try each itinerary sequentially
-  //  for (const itineraryId of itineraryIds) {
-  //    try {
-  //      const response = await httpService.get(`/v1/flights/getFlightDetails`, {
-  //        params: {
-  //          legs: legsString,
-  //          sessionId: params.sessionId,
-  //          itineraryId: itineraryId.trim(),
-  //          locale: 'en-US',
-  //        },
-  //      });
- 
-  //      return response.data.itinerary;
-  //    } catch (error) {
-  //      lastError = error;
-  //      console.log(`Failed to fetch details for itinerary ${itineraryId}:`, error);
-  //      continue;
-  //    }
-  //  }
- 
-  //  // If we get here, all itineraries failed
-  //  throw new Error(`Failed to fetch flight details for all itineraries.`);
-    return getFlightDetailsData.data.itinerary
+    // Split itineraryId into array if it contains multiple ids
+    const itineraryIds = params.itineraryId.split('|')
+    let lastError = null
+
+    // Try each itinerary sequentially
+    for (const itineraryId of itineraryIds) {
+      try {
+        const response = await httpService.get(`/v1/flights/getFlightDetails`, {
+          params: {
+            legs: legsString,
+            sessionId: params.sessionId,
+            itineraryId: itineraryId.trim(),
+            locale: 'en-US',
+          },
+        })
+
+        return response.data.itinerary
+      } catch (error) {
+        lastError = error
+        console.log(
+          `Failed to fetch details for itinerary ${itineraryId}:`,
+          error
+        )
+        continue
+      }
+    }
+
+    // If we get here, all itineraries failed
+    throw new Error(`Failed to fetch flight details for all itineraries.`)
   }
 
   async reserveSeat(

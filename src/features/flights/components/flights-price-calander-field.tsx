@@ -39,7 +39,7 @@ function FlightsPriceCalanderField() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <div className='grid grid-cols-2 gap-4'>
+        <div className='grid grid-cols-2 gap-4 max-sm:grid-cols-1'>
           <div className='flex flex-col gap-1'>
             <FormLabel className='pb-2'>Departure Date</FormLabel>
             <Button

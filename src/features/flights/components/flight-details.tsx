@@ -70,8 +70,8 @@ function FlightDetails() {
       {/* Flight Details Card */}
       <Card className='hover:shadow-lg transition-shadow'>
         <CardContent className='p-6'>
-          <div className='flex justify-between'>
-            <div className='flex items-center space-x-4'>
+          <div className='flex justify-between flex-wrap'>
+            <div className='flex items-center gap-4 flex-wrap'>
               <img
                 src={flight.segments[0].marketingCarrier.logo}
                 alt={flight.segments[0].operatingCarrier.name}
@@ -219,12 +219,12 @@ function FlightDetails() {
                         </div>
                       </div>
 
-                      <div className='flex items-center gap-4 flex-wrap max-sm:space-between'>
-                        <div className='text-right'>
+                      <div className='flex items-center gap-4 flex-wrap max-sm:justify-between max-sm:w-full'>
+                        <div className='text-right max-sm:text-left'>
                           <span className='text-2xl font-bold'>
                             USD {agent.price}
                           </span>
-                          <span className='block text-sm text-gray-500'>
+                          <span className='block text-sm text-gray-500 max-sm:text-left'>
                             Updated {agent.quoteAge} mins ago
                           </span>
                         </div>

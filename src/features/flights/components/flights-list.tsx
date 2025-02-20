@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { useNavigate } from '@tanstack/react-router'
 import { ChevronDown, ChevronUp, Usb, Video, Wifi } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import useFeatureQuery from '../hooks/useFeatureQuery'
 import { FlightLeg } from '../service/flights.service'
 
 const FlightList = () => {
-  const { searchFlightsQuery,navigate } = useFeatureQuery()
+  const { searchFlightsQuery, navigate } = useFeatureQuery()
   const [expandedFlights, setExpandedFlights] = useState<string[]>([])
 
-  
   const toggleExpand = (flightId: string) => {
     setExpandedFlights((prev) =>
       prev.includes(flightId)
@@ -74,8 +72,8 @@ const FlightList = () => {
                 className='hover:shadow-lg transition-shadow'
               >
                 <CardContent className='p-4'>
-                  <div className='flex  justify-between'>
-                    <div className='flex items-center space-x-4'>
+                  <div className='flex  justify-between flex-wrap'>
+                    <div className='flex items-center gap-4 flex-wrap max-sm:flex-col max-sm:items-start'>
                       <img
                         src={getCarrierLogo(
                           flight.legs[0].carriers.marketing[0]
@@ -85,7 +83,7 @@ const FlightList = () => {
                       />
                       <div className='space-y-4'>
                         {/* Flight times and route */}
-                        <div className='flex items-center space-x-6'>
+                        <div className='flex items-center gap-4 flex-wrap'>
                           <div>
                             <span className='text-lg font-semibold'>
                               {formatTime(flight.legs[0].departure)}
@@ -137,7 +135,7 @@ const FlightList = () => {
                         </div>
 
                         {/* Airline info and amenities */}
-                        <div className='flex items-center space-x-4 text-sm text-gray-600'>
+                        <div className='flex items-center flex-wrap gap-4  text-sm text-gray-600'>
                           <span>
                             {flight.legs[0].carriers.marketing[0].name}
                           </span>
@@ -145,7 +143,6 @@ const FlightList = () => {
                           <span>
                             Flight {flight.legs[0].segments[0].flightNumber}
                           </span>
-                          <div className='flex items-center space-x-3 ml-4'>
                             <div className='flex items-center space-x-1'>
                               <Wifi className='w-4 h-4' />
                               <span className='text-xs'>Wi-Fi</span>
@@ -158,13 +155,13 @@ const FlightList = () => {
                               <Video className='w-4 h-4' />
                               <span className='text-xs'>Entertainment</span>
                             </div>
-                          </div>
+                          
                         </div>
                       </div>
                     </div>
 
                     {/* Price and select button */}
-                    <div className='text-right flex flex-col  items-between justify-between '>
+                    <div className='text-right max-sm:mt-4 flex flex-col max-sm:flex-row max-sm:w-full  items-between justify-between '>
                       <span className='text-lg font-semibold'>
                         USD {flight.price.raw}
                       </span>
