@@ -1,8 +1,3 @@
-import { z } from 'zod'
-import { format } from 'date-fns'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
 import debounce from 'lodash.debounce'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,105 +24,10 @@ import FlightsPriceCalanderField from './components/flights-price-calander-field
 import useFeatureQuery from './hooks/useFeatureQuery'
 import { flightService } from './service/flights.service'
 
-const formSchema = z
-  .object({
-    origin: z.object({
-      label: z.string(),
-      skyId: z.string().min(3),
-      entityId: z.string().min(8),
-    }),
-    destination: z.object({
-      label: z.string(),
-      skyId: z.string().min(3),
-      entityId: z.string().min(8),
-    }),
-    departureDate: z.date({
-      required_error: 'Departure date is required',
-    }),
-    returnDate: z.date().optional(),
-    passengers: z.number().min(1).max(9),
-    tripType: z.enum(['oneWay', 'roundTrip']),
-    airClass: z.enum(['economy', 'premium', 'business', 'firstClass']),
-  })
-  .refine(
-    (data) => {
-      if (data.tripType === 'roundTrip' && !data.returnDate) {
-        return false
-      }
-      if (data.returnDate && data.returnDate < data.departureDate) {
-        return false
-      }
-      return true
-    },
-    {
-      message: 'Return date must be after departure date',
-      path: ['returnDate'],
-    }
-  )
-
-export type FormSchema = z.infer<typeof formSchema>
-export type Option = { label: string; skyId: string; entityId: string }
-
 export const debouncedSearch = debounce((func, value) => func(value), 700)
 
 export default function Flights() {
-  const navigate = useNavigate({
-    from: '/flights',
-  })
-
-  const { searchFlights } = useFeatureQuery()
-
-  const form = useForm<FormSchema>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      tripType: 'oneWay',
-      airClass: 'economy',
-      passengers: 1,
-      origin: {
-        label: 'Agadir (AGA)',
-        skyId: 'AGA',
-        entityId: '95673640',
-      },
-      destination: {
-        label: 'London Heathrow (LHR)',
-        skyId: 'LHR',
-        entityId: '95565050',
-      },
-      // departureDate: new Date(
-      //   format(new Date('2025-02-17T18:00:00.000Z'), 'yyyy-MM-dd')
-      // ),
-    },
-  })
-
-  const onSubmit = async (values: FormSchema) => {
-    navigate({
-      to: '/flights',
-      search: (params) => {
-        const newParams: any = {
-          ...params,
-          originSkyId: values.origin.skyId,
-          destinationSkyId: values.destination.skyId,
-          originEntityId: values.origin.entityId,
-          destinationEntityId: values.destination.entityId,
-          cabinClass: values.airClass,
-          adults: values.passengers,
-          date: format(new Date(values.departureDate), 'yyyy-MM-dd'),
-          sortBy: 'best',
-          currency: 'USD',
-          market: 'en-US',
-          countryCode: 'US',
-        }
-
-        if (values.tripType === 'roundTrip') {
-          newParams.returnDate = format(
-            new Date(values.returnDate!),
-            'yyyy-MM-dd'
-          )
-        }
-        return newParams
-      },
-    })
-  }
+  const { searchFlightsQuery, onSubmit, form } = useFeatureQuery()
 
   return (
     <Main>
@@ -169,7 +69,7 @@ export default function Flights() {
                   />
                   <FormField
                     control={form.control}
-                    name='airClass'
+                    name='cabinClass'
                     render={({ field }) => (
                       <FormItem className='flex-1'>
                         <FormLabel>Trip type</FormLabel>
@@ -184,9 +84,9 @@ export default function Flights() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value='economy'>Economy</SelectItem>
-                            <SelectItem value='premium'>Premium</SelectItem>
+                            <SelectItem value='premium_economy'>Premium</SelectItem>
                             <SelectItem value='business'>Business</SelectItem>
-                            <SelectItem value='firstClass'>
+                            <SelectItem value='first'>
                               First Class
                             </SelectItem>
                           </SelectContent>
@@ -196,7 +96,7 @@ export default function Flights() {
                   />
                   <FormField
                     control={form.control}
-                    name='passengers'
+                    name='adults'
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Passengers</FormLabel>
@@ -237,9 +137,11 @@ export default function Flights() {
                 <Button
                   type='submit'
                   className='w-full'
-                  disabled={searchFlights.isPending}
+                  disabled={searchFlightsQuery.isPending}
                 >
-                  {searchFlights.isPending ? 'Searching...' : 'Search Flights'}
+                  {searchFlightsQuery.isPending
+                    ? 'Searching...'
+                    : 'Search Flights'}
                 </Button>
               </form>
             </Form>

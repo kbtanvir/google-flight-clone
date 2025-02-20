@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { FormSchema } from '..'
+import { FormSchema } from '../hooks/useFeatureQuery'
 import { flightService } from '../service/flights.service'
 
 function FlightsPriceCalanderField() {
@@ -29,11 +29,11 @@ function FlightsPriceCalanderField() {
         form.watch('departureDate') ?? new Date()
       ),
     enabled: !!form.watch('origin.skyId') && !!form.watch('destination.skyId'),
-    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    refetchOnWindowFocus: false, // Don't refetch when window regains focus
-    refetchOnMount: true, // Refetch on component mount
-    refetchOnReconnect: true, // Refetch when internet reconnects
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   })
 
   return (

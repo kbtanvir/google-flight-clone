@@ -17,13 +17,14 @@ function FlightDetails() {
   const searchParams: any = useSearch({
     from: '/(public)/flight-details',
   })
+
   const detailsMatch = useMatch({
     from: '/(public)/flight-details',
     shouldThrow: false,
   })
 
   const flightDetailsQuery = useQuery({
-    queryKey: ['flights.details', searchParams],
+    queryKey: ['flights.details', new URLSearchParams(searchParams).toString()],
     queryFn: () =>
       flightService.getFlightDetails({
         legs: {
@@ -35,6 +36,7 @@ function FlightDetails() {
         itineraryId: searchParams.itineraryId,
       }),
     enabled: !!detailsMatch,
+    refetchOnMount: false,
   })
 
   const [isStopsExpanded, setIsStopsExpanded] = useState(false)
@@ -53,15 +55,6 @@ function FlightDetails() {
     return `${hours} hrs ${mins} min`
   }
 
-  const getCarrierLogo = (carrier: {
-    id?: number
-    alternateId?: string
-    logoUrl: string
-    name?: string
-  }) => {
-    return carrier.logoUrl || '/api/placeholder/24/24'
-  }
-
   if (flightDetailsQuery.isLoading) return <div>Loading...</div>
 
   if (!flightDetailsQuery.data?.legs[0])
@@ -71,7 +64,7 @@ function FlightDetails() {
   const pricingOptions = flightDetailsQuery.data.pricingOptions
 
   return (
-    <div className='mt-8 space-y-4 max-w-4xl mx-auto'>
+    <div className='mt-8 space-y-4 max-w-4xl mx-auto p-4'>
       <h2 className='text-2xl font-bold'>Flight Details</h2>
 
       {/* Flight Details Card */}
@@ -80,7 +73,7 @@ function FlightDetails() {
           <div className='flex justify-between'>
             <div className='flex items-center space-x-4'>
               <img
-                src={flight.segments[0].operatingCarrier.logo}
+                src={flight.segments[0].marketingCarrier.logo}
                 alt={flight.segments[0].operatingCarrier.name}
                 className='w-8 h-8 object-contain'
               />
@@ -128,25 +121,23 @@ function FlightDetails() {
                 </div>
 
                 {/* Airline info and amenities */}
-                <div className='flex items-center space-x-4 text-sm text-gray-600'>
+                <div className='flex items-center gap-4 text-sm text-gray-600 flex-wrap'>
                   <span>{flight.segments[0].operatingCarrier.name}</span>
                   <span>•</span>
                   <span>
                     Flight {flight.segments[0].operatingCarrier.displayCode}
                   </span>
-                  <div className='flex items-center space-x-3 ml-4'>
-                    <div className='flex items-center space-x-1'>
-                      <Wifi className='w-4 h-4' />
-                      <span className='text-xs'>Wi-Fi</span>
-                    </div>
-                    <div className='flex items-center space-x-1'>
-                      <Usb className='w-4 h-4' />
-                      <span className='text-xs'>USB</span>
-                    </div>
-                    <div className='flex items-center space-x-1'>
-                      <Video className='w-4 h-4' />
-                      <span className='text-xs'>Entertainment</span>
-                    </div>
+                  <div className='flex items-center space-x-1'>
+                    <Wifi className='w-4 h-4' />
+                    <span className='text-xs'>Wi-Fi</span>
+                  </div>
+                  <div className='flex items-center space-x-1'>
+                    <Usb className='w-4 h-4' />
+                    <span className='text-xs'>USB</span>
+                  </div>
+                  <div className='flex items-center space-x-1'>
+                    <Video className='w-4 h-4' />
+                    <span className='text-xs'>Entertainment</span>
                   </div>
                 </div>
               </div>
@@ -156,7 +147,7 @@ function FlightDetails() {
           {/* Expandable Stop Details */}
           {isStopsExpanded && flight.stopCount > 0 && (
             <div className='mt-4 pl-12 border-t pt-4 space-y-3'>
-              {flight.segments.map((segment, index) => (
+              {flight.segments.map((segment) => (
                 <div key={segment.id} className='flex items-center space-x-6'>
                   <div>
                     <span className='text-sm font-semibold'>
@@ -202,7 +193,7 @@ function FlightDetails() {
                   className='hover:shadow-md transition-shadow'
                 >
                   <CardContent className='p-4'>
-                    <div className='flex justify-between items-center'>
+                    <div className='flex justify-between flex-wrap gap-4 items-center'>
                       <div className='flex items-center space-x-4'>
                         <img
                           src={agent.segments[0].marketingCarrier.logo}
@@ -228,7 +219,7 @@ function FlightDetails() {
                         </div>
                       </div>
 
-                      <div className='flex items-center space-x-4'>
+                      <div className='flex items-center gap-4 flex-wrap max-sm:space-between'>
                         <div className='text-right'>
                           <span className='text-2xl font-bold'>
                             USD {agent.price}

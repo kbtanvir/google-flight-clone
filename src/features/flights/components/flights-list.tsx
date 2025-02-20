@@ -7,13 +7,10 @@ import useFeatureQuery from '../hooks/useFeatureQuery'
 import { FlightLeg } from '../service/flights.service'
 
 const FlightList = () => {
-  const { searchFlights } = useFeatureQuery()
+  const { searchFlightsQuery,navigate } = useFeatureQuery()
   const [expandedFlights, setExpandedFlights] = useState<string[]>([])
 
-  const navigate = useNavigate({
-    from: '/flights',
-  })
-
+  
   const toggleExpand = (flightId: string) => {
     setExpandedFlights((prev) =>
       prev.includes(flightId)
@@ -43,11 +40,11 @@ const FlightList = () => {
         originSkyId: item.origin.id,
         destinationSkyId: item.destination.id,
         date: format(new Date(item.departure), 'yyyy-MM-dd'),
-        sessionId: searchFlights.data?.sessionId,
+        sessionId: searchFlightsQuery.data?.sessionId,
         currency: 'USD',
         market: 'en-US',
         countryCode: 'US',
-        itineraryId: item.id
+        itineraryId: item.id,
       }),
     })
   }
@@ -61,14 +58,14 @@ const FlightList = () => {
     return carrier.logoUrl || '/api/placeholder/24/24'
   }
 
-  if (searchFlights.isLoading) return <div>Loading...</div>
+  if (searchFlightsQuery.isLoading) return <div>Loading...</div>
 
   return (
     <div className='mt-8'>
-      {searchFlights.isSuccess && searchFlights.data && (
+      {searchFlightsQuery.isSuccess && searchFlightsQuery.data && (
         <div className='space-y-4'>
           <h2 className='text-2xl font-bold'>Search Results</h2>
-          {searchFlights.data.itineraries.map((flight) => {
+          {searchFlightsQuery.data.itineraries.map((flight) => {
             const isExpanded = expandedFlights.includes(flight.legs[0].id)
 
             return (

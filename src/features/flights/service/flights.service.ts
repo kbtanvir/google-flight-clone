@@ -1,6 +1,6 @@
 import axios from 'axios'
+import { getFlightDetailsData, getPriceCalendarData } from '../data/data'
 import { addMonths, format } from 'date-fns'
-import { getAirportData, getFlightDetailsData, getFlightsData, getPriceCalendarData } from '../data/data'
 
 export interface Airport {
   skyId: string
@@ -241,14 +241,13 @@ httpService.interceptors.response.use(
 )
 
 class SearchService {
-  async searchFlights(params: string): Promise<any> {
-    // const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
-    // const { itineraries, flightsSessionId } = res.data
-    // return { itineraries, sessionId: flightsSessionId }
+  async searchFlights(params: string) {
+    const res = await httpService.get(`/v2/flights/searchFlights?${params}`)
+    const { itineraries, flightsSessionId } = res.data
+    return { itineraries, sessionId: flightsSessionId }
 
-    const { itineraries, flightsSessionId } = getFlightsData.data
-    return await Promise.resolve({ itineraries, sessionId: flightsSessionId })
-
+    // const { itineraries, flightsSessionId } = getFlightsData.data
+    // return await Promise.resolve({ itineraries, sessionId: flightsSessionId })
   }
 
   async getPopularRoutes() {
@@ -272,55 +271,61 @@ class PricingService {
     destination: string,
     month: number | Date
   ) {
-    // const fromMonth = format(month, 'yyyy-MM-dd')
-    // const toDate = format(addMonths(month, 1), 'yyyy-MM-dd')
+    const fromMonth = format(month, 'yyyy-MM-dd')
+    const toDate = format(addMonths(month, 1), 'yyyy-MM-dd')
 
-    // const res = await httpService.get<PriceCalanderData>(
-    //   `/v1/flights/getPriceCalendar`,
-    //   {
-    //     params: {
-    //       originSkyId: origin,
-    //       destinationSkyId: destination,
-    //       fromDate: fromMonth,
-    //       toDate,
-    //       currency: 'USD',
-    //     },
-    //   }
-    // )
+    const res = await httpService.get<PriceCalanderData>(
+      `/v1/flights/getPriceCalendar`,
+      {
+        params: {
+          originSkyId: origin,
+          destinationSkyId: destination,
+          fromDate: fromMonth,
+          toDate,
+          currency: 'USD',
+        },
+      }
+    )
 
-    // return res.data.flights
-    return await Promise.resolve(getPriceCalendarData.data.flights)
+    return res.data.flights
+    // return await Promise.resolve(getPriceCalendarData.data.flights)
   }
 }
 
 class BookingService {
-  async getFlightDetails(params: DetailsParams) {
-    console.log(params)
-    // const legsArray = [
-    //   {
-    //     destination: params.legs.destination,
-    //     origin: params.legs.origin,
-    //     date: params.legs.date,
-    //   },
-    // ]
+  async getFlightDetails(params: DetailsParams)
+  // :Promise<FlightItineraryDetails> 
+  {
+  //  // Create the exact string format needed with escaped quotes
+  //  const legsString = `"[{\\"destination\\":\\"${params.legs.destination}\\",\\"origin\\":\\"${params.legs.origin}\\",\\"date\\":\\"${params.legs.date}\\"}]"`;
 
-    // First stringify the legs array
-    // const legsString = JSON.stringify(legsArray)
-
-    // Double encode the legs parameter
-    // const legsString = `"[{\\"destination\\":\\"${params.legs.destination}\\",\\"origin\\":\\"${params.legs.origin}\\",\\"date\\":\\"${params.legs.date}\\"}]"`
-
-    // const res = await httpService.get(`/v1/flights/getFlightDetails`, {
-    //   params: {
-    //     legs: legsString,
-    //     sessionId: params.sessionId,
-    //     itineraryId: params.itineraryId,
-    //     locale: 'en-US',
-    //   },
-    // })
-
-    // return res.data.itinerary
-    return await Promise.resolve(getFlightDetailsData.data.itinerary)
+  //  // Split itineraryId into array if it contains multiple ids
+  //  const itineraryIds = params.itineraryId.split('|');
+  //  let lastError = null;
+ 
+  //  // Try each itinerary sequentially
+  //  for (const itineraryId of itineraryIds) {
+  //    try {
+  //      const response = await httpService.get(`/v1/flights/getFlightDetails`, {
+  //        params: {
+  //          legs: legsString,
+  //          sessionId: params.sessionId,
+  //          itineraryId: itineraryId.trim(),
+  //          locale: 'en-US',
+  //        },
+  //      });
+ 
+  //      return response.data.itinerary;
+  //    } catch (error) {
+  //      lastError = error;
+  //      console.log(`Failed to fetch details for itinerary ${itineraryId}:`, error);
+  //      continue;
+  //    }
+  //  }
+ 
+  //  // If we get here, all itineraries failed
+  //  throw new Error(`Failed to fetch flight details for all itineraries.`);
+    return getFlightDetailsData.data.itinerary
   }
 
   async reserveSeat(
@@ -337,12 +342,12 @@ class BookingService {
 
 class AirportService {
   async searchAirports(query: string): Promise<any> {
-    // const res = await httpService.get<Airport[]>(`/v1/flights/searchAirport`, {
-    //   params: { query, locale: 'en-US' },
-    // })
+    const res = await httpService.get<Airport[]>(`/v1/flights/searchAirport`, {
+      params: { query, locale: 'en-US' },
+    })
 
-    // return res.data
-    return await Promise.resolve(getAirportData.data)
+    return res.data
+    // return await Promise.resolve(getAirportData.data)
   }
 
   async getNearbyAirports(latitude: number, longitude: number) {

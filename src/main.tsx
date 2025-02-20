@@ -9,7 +9,6 @@ import {
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { authStore, initialState } from '@/stores/authStore'
 import { handleServerError } from '@/utils/handle-server-error'
-// Generated Routes
 import { toast } from '@/hooks/use-toast'
 import { ThemeProvider } from './context/theme-context'
 import './index.css'
@@ -31,7 +30,7 @@ const queryClient = new QueryClient({
         )
       },
       refetchOnWindowFocus: import.meta.env.PROD,
-      staleTime: 10 * 1000, // 10s
+      staleTime: 50 * 1000, // 10s
     },
     mutations: {
       onError: (error) => {
