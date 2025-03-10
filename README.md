@@ -1,6 +1,6 @@
 # Google Flight Clone
 
-Google Flight Clone crafted with Shadcn and Vite. Built with responsiveness and accessibility in mind.
+Google Flight Clone crafted with Shadcn and Vite. Built with responsiveness and accessibility in mind. Uses rapid api enpoints to pull latest flight data, Allowing users to book flights from popular platforms directly from the app.
 
 ![image](https://github.com/user-attachments/assets/4a79d827-9b60-4527-b557-e0c2e2b82b60)
 
