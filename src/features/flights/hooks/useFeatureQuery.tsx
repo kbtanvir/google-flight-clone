@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { z } from 'zod'
+import { addDays } from 'date-fns'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -20,7 +22,8 @@ export const flightSearchSchema = z.object({
     .date({
       required_error: 'Departure date is required',
     })
-    .or(z.string()),
+    .or(z.string())
+    .default(new Date()),
   returnDate: z.date().or(z.string()).optional(),
   adults: z.number().min(1).max(9).default(1),
   tripType: z.enum(['oneWay', 'roundTrip']).default('oneWay'),
@@ -77,6 +80,9 @@ function useFeatureQuery() {
     defaultValues: {
       ...searchParams,
       tripType: searchParams.tripType ?? 'oneWay',
+      departureDate: searchParams.departureDate
+        ? new Date(searchParams.departureDate)
+        : addDays(new Date(), 1),
       origin: searchParams.origin ?? {
         label: 'Austin-Bergstrom (AUS)',
         skyId: 'AUS',
@@ -90,6 +96,18 @@ function useFeatureQuery() {
       adults: searchParams.adults ?? 1,
     },
   })
+
+  useEffect(() => {
+    navigate({
+      to: '/flights',
+      search: () =>  ({
+        ...form.getValues(),
+        departureDate: form.getValues('departureDate'),
+      }),
+    })
+
+    void searchFlightsQuery.refetch()
+  }, [])
 
   const onSubmit = async (values: FormSchema) => {
     navigate({

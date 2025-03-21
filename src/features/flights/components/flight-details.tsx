@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { flightService } from '../service/flights.service'
+import LoadingScreen from './loading-skeleton'
 
 function FlightDetails() {
   const searchParams: any = useSearch({
@@ -25,8 +26,7 @@ function FlightDetails() {
 
   const flightDetailsQuery = useQuery({
     queryKey: ['flights.details', searchParams],
-    queryFn: () =>
-      flightService.getFlightDetails(searchParams),
+    queryFn: () => flightService.getFlightDetails(searchParams),
     enabled: !!detailsMatch,
     refetchOnMount: false,
   })
@@ -47,10 +47,17 @@ function FlightDetails() {
     return `${hours} hrs ${mins} min`
   }
 
-  if (flightDetailsQuery.isLoading) return <div>Loading...</div>
+  if (flightDetailsQuery.isLoading) {
+    return (
+      <div className='mt-8 space-y-4 max-w-4xl mx-auto p-4'>
+        <LoadingScreen />
+      </div>
+    )
+  }
 
-  if (!flightDetailsQuery.data?.legs[0])
+  if (!flightDetailsQuery.data?.legs[0]) {
     return <div>No flight details available</div>
+  }
 
   const flight = flightDetailsQuery.data.legs[0]
   const pricingOptions = flightDetailsQuery.data.pricingOptions

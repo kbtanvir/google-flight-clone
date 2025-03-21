@@ -24,7 +24,7 @@ import { flightService } from './service/flights.service'
 
 export default function Flights() {
   const { searchFlightsQuery, onSubmit, form } = useFeatureQuery()
-
+  
   return (
     <div className='mt-8 space-y-4 max-w-4xl mx-auto p-4'>
       <Card>
@@ -130,7 +130,7 @@ export default function Flights() {
               <Button
                 type='submit'
                 className='w-full'
-                disabled={searchFlightsQuery.isPending}
+                // disabled={searchFlightsQuery.isPending}
               >
                 {searchFlightsQuery.isPending
                   ? 'Searching...'

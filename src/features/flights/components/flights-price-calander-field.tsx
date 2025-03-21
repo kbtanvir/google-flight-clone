@@ -15,7 +15,7 @@ import { flightService } from '../service/flights.service'
 
 function FlightsPriceCalanderField() {
   const form = useFormContext<FormSchema>()
-
+  
   const flightPrices = useQuery({
     queryKey: [
       'flights.prices',

@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Usb, Video, Wifi } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import useFeatureQuery from '../hooks/useFeatureQuery'
 import { FlightLeg } from '../service/flights.service'
+import LoadingScreen from './loading-skeleton'
 
 const FlightList = () => {
   const { searchFlightsQuery, navigate } = useFeatureQuery()
@@ -55,7 +56,7 @@ const FlightList = () => {
     return carrier.logoUrl || '/api/placeholder/24/24'
   }
 
-  if (searchFlightsQuery.isLoading) return <div>Loading...</div>
+  if (searchFlightsQuery.isLoading) return [...Array(5)].map((_, index) => <LoadingScreen key={index} />)
 
   return (
     <div className='mt-8'>
