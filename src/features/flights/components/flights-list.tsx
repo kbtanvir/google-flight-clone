@@ -63,7 +63,10 @@ const FlightList = () => {
       {searchFlightsQuery.isSuccess && searchFlightsQuery.data && (
         <div className='space-y-4'>
           <h2 className='text-2xl font-bold'>Search Results</h2>
-          {searchFlightsQuery.data.itineraries.map((flight) => {
+          {(!searchFlightsQuery.data.itineraries || searchFlightsQuery.data.itineraries.length === 0) && (
+            <p className='text-muted-foreground'>No flights found for this route and date. Try different dates or destinations.</p>
+          )}
+          {(searchFlightsQuery.data.itineraries ?? []).map((flight) => {
             const isExpanded = expandedFlights.includes(flight.legs[0].id)
 
             return (
