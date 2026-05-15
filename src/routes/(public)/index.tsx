@@ -13,9 +13,10 @@ function RouteComponent() {
   useEffect(() => {
     navigate({
       to: '/flights',
-      search: () => ({
+      // Router types want Date; we pass an ISO string. validateSearch coerces it.
+      search: (() => ({
         departureDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-      }),
+      })) as never,
     })
   }, [])
 }

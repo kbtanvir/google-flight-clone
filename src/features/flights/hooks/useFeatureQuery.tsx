@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { z } from 'zod'
 import { addDays } from 'date-fns'
 import { useForm } from 'react-hook-form'
@@ -7,25 +6,22 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMatch, useNavigate, useSearch } from '@tanstack/react-router'
 import { flightService } from '../service/flights.service'
 
+// Schema used by the form layer. Dates are real Date objects here; URL strings
+// are coerced via z.coerce when this schema parses search params.
 export const flightSearchSchema = z.object({
   origin: z.object({
-    label: z.string().default('New York'),
-    skyId: z.string().min(3).default('JFK'),
-    entityId: z.string().min(8).default('NYC-123456'),
+    label: z.string().default('Austin-Bergstrom (AUS)'),
+    skyId: z.string().min(3).default('AUS'),
+    entityId: z.string().min(2).default('95673643'),
   }),
   destination: z.object({
-    label: z.string().default('Los Angeles'),
-    skyId: z.string().min(3).default('LAX'),
-    entityId: z.string().min(8).default('LAX-123456'),
+    label: z.string().default('New York John F. Kennedy (JFK)'),
+    skyId: z.string().min(3).default('JFK'),
+    entityId: z.string().min(2).default('95565058'),
   }),
-  departureDate: z
-    .date({
-      required_error: 'Departure date is required',
-    })
-    .or(z.string())
-    .default(new Date()),
-  returnDate: z.date().or(z.string()).optional(),
-  adults: z.number().min(1).max(9).default(1),
+  departureDate: z.coerce.date({ required_error: 'Departure date is required' }),
+  returnDate: z.coerce.date().optional(),
+  adults: z.coerce.number().min(1).max(9).default(1),
   tripType: z.enum(['oneWay', 'roundTrip']).default('oneWay'),
   cabinClass: z
     .enum(['economy', 'premium_economy', 'business', 'first'])
@@ -34,6 +30,15 @@ export const flightSearchSchema = z.object({
 
 export type FormSchema = z.infer<typeof flightSearchSchema>
 export type Option = { label: string; skyId: string; entityId: string }
+
+// Convert form values (Date objects) to URL-safe search params (ISO strings).
+const toUrlSearch = (v: FormSchema) => ({
+  ...v,
+  departureDate:
+    v.departureDate instanceof Date ? v.departureDate.toISOString() : v.departureDate,
+  returnDate:
+    v.returnDate instanceof Date ? v.returnDate.toISOString() : v.returnDate,
+})
 
 function useFeatureQuery() {
   const navigate = useNavigate({
@@ -78,11 +83,18 @@ function useFeatureQuery() {
       )
     ),
     defaultValues: {
-      ...searchParams,
       tripType: searchParams.tripType ?? 'oneWay',
+      cabinClass: searchParams.cabinClass ?? 'economy',
+      adults:
+        typeof searchParams.adults === 'string'
+          ? Number(searchParams.adults)
+          : (searchParams.adults ?? 1),
       departureDate: searchParams.departureDate
-        ? new Date(searchParams.departureDate)
+        ? new Date(searchParams.departureDate as unknown as string)
         : addDays(new Date(), 1),
+      returnDate: searchParams.returnDate
+        ? new Date(searchParams.returnDate as unknown as string)
+        : undefined,
       origin: searchParams.origin ?? {
         label: 'Austin-Bergstrom (AUS)',
         skyId: 'AUS',
@@ -93,26 +105,15 @@ function useFeatureQuery() {
         skyId: 'JFK',
         entityId: '95565058',
       },
-      adults: searchParams.adults ?? 1,
     },
   })
-
-  useEffect(() => {
-    navigate({
-      to: '/flights',
-      search: () =>  ({
-        ...form.getValues(),
-        departureDate: form.getValues('departureDate'),
-      }),
-    })
-
-    void searchFlightsQuery.refetch()
-  }, [])
 
   const onSubmit = async (values: FormSchema) => {
     navigate({
       to: '/flights',
-      search: () => values,
+      // Router types want Date, but we serialize to ISO strings for clean URLs.
+      // validateSearch on the route re-coerces strings back to Date on read.
+      search: (() => toUrlSearch(values)) as never,
     })
 
     searchFlightsQuery.refetch()
